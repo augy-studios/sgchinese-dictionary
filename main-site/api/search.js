@@ -86,25 +86,11 @@ function getSortColumns(sort) {
     }
 }
 
-// Determine which tables to query based on query type and first letter(s)
+// Determine which tables to query based on query type
 function getTablesToQuery(q, queryType) {
-    if (queryType === 'chinese') {
-        // Chinese search can be in any table — query all
-        return AVAILABLE_LETTERS;
-    }
-
-    if (queryType === 'pinyin' || queryType === 'ambiguous') {
-        // Try to narrow by first letter of pinyin
-        const normalised = normalisePinyin(q);
-        const firstChar = normalised[0];
-        if (AVAILABLE_LETTERS.includes(firstChar)) {
-            return [firstChar];
-        }
-        // fallback: all
-        return AVAILABLE_LETTERS;
-    }
-
-    // English — query all tables
+    // All searches use ilike '%query%' (substring match), so a query like "jie"
+    // can match entries in any table (e.g. "ā jiě" is in sgchn_a, not sgchn_j).
+    // Always query all tables.
     return AVAILABLE_LETTERS;
 }
 
