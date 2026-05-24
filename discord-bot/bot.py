@@ -588,6 +588,35 @@ async def cmd_sort(interaction: discord.Interaction):
     await msg.edit(view=view)
 
 
+def _build_random_embed(entry: dict) -> discord.Embed:
+    embed = discord.Embed(title="🎲  Random Entry", colour=ACCENT_COLOUR)
+    embed.add_field(name="Chinese",     value=entry["chinese"],      inline=True)
+    embed.add_field(name="Pinyin",      value=entry["hanyupinyin"],  inline=True)
+    embed.add_field(name="Translation", value=entry["translation"],  inline=False)
+    return embed
+
+
+class RandomView(discord.ui.View):
+    def __init__(self):
+        super().__init__(timeout=None)
+
+    @discord.ui.button(label="🎲  New Random Word", style=discord.ButtonStyle.primary, custom_id="random_reroll")
+    async def reroll(self, interaction: discord.Interaction, button: discord.ui.Button):
+        await interaction.response.defer()
+        try:
+            entry = await get_random_entry()
+        except Exception as exc:
+            logger.error("Random entry error: %s", exc)
+            await interaction.followup.send("⚠️ Couldn't fetch a random entry.", ephemeral=True)
+            return
+
+        if not entry:
+            await interaction.followup.send("⚠️ No entries found. Try again.", ephemeral=True)
+            return
+
+        await interaction.edit_original_response(embed=_build_random_embed(entry))
+
+
 @tree.command(name="random", description="Get a random entry from the dictionary")
 async def cmd_random(interaction: discord.Interaction):
     await interaction.response.defer()
@@ -606,11 +635,9 @@ async def cmd_random(interaction: discord.Interaction):
         )
         return
 
-    embed = discord.Embed(title="🎲  Random Entry", colour=ACCENT_COLOUR)
-    embed.add_field(name="Chinese",     value=entry["chinese"],      inline=True)
-    embed.add_field(name="Pinyin",      value=entry["hanyupinyin"],  inline=True)
-    embed.add_field(name="Translation", value=entry["translation"],  inline=False)
-    await interaction.followup.send(embed=embed)
+    view = RandomView()
+    client.add_view(view)
+    await interaction.followup.send(embed=_build_random_embed(entry), view=view)
 
 
 @tree.command(name="quote", description="Get an inspirational quote about learning")
