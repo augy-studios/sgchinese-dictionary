@@ -128,13 +128,6 @@ module.exports = async function handler(req, res) {
     } = req.query;
 
     const query = q.trim();
-    if (!query) {
-        return res.status(200).json({
-            results: [],
-            total: 0,
-            queryType: 'none'
-        });
-    }
 
     const pageOffset = Math.max(0, parseInt(offset, 10) || 0);
     const pageLimit = Math.min(100, Math.max(1, parseInt(limit, 10) || 30));
@@ -149,8 +142,8 @@ module.exports = async function handler(req, res) {
     }
 
     const supabase = createClient(supabaseUrl, supabaseKey);
-    const queryType = detectQueryType(query);
-    const tables = getTablesToQuery(query, queryType);
+    const queryType = query ? detectQueryType(query) : 'all';
+    const tables = query ? getTablesToQuery(query, queryType) : AVAILABLE_LETTERS;
     const sortCols = getSortColumns(sort);
 
     try {
@@ -167,18 +160,15 @@ module.exports = async function handler(req, res) {
                 });
 
                 if (queryType === 'chinese') {
-                    // Exact or partial Chinese character match
                     qb = qb.ilike('chinese', `%${query}%`);
                 } else if (queryType === 'pinyin') {
-                    // Match with and without tone marks
-                    // We store both original and check normalised via ilike
                     qb = qb.or(`hanyupinyin.ilike.%${query}%,hanyupinyin.ilike.%${normQ}%`);
-                } else {
-                    // Ambiguous: search pinyin OR translation
+                } else if (queryType === 'ambiguous') {
                     qb = qb.or(
                         `hanyupinyin.ilike.%${normQ}%,translation.ilike.%${query}%`
                     );
                 }
+                // queryType === 'all': no filter — fetch everything
 
                 // Apply sort (no limit/offset here — we aggregate first)
                 return qb;

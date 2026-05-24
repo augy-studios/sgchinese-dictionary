@@ -163,11 +163,7 @@ searchInput.addEventListener('input', () => {
         state.query = q;
         state.offset = 0;
         state.results = [];
-        if (q.length === 0) {
-            showInitialState();
-        } else {
-            fetchResults(false);
-        }
+        fetchResults(false);
     }, 350);
 });
 
@@ -177,7 +173,7 @@ clearBtn.addEventListener('click', () => {
     state.query = '';
     state.offset = 0;
     state.results = [];
-    showInitialState();
+    fetchResults(false);
     searchInput.focus();
 });
 
@@ -185,7 +181,7 @@ sortSelect.addEventListener('change', () => {
     state.sort = sortSelect.value;
     state.offset = 0;
     state.results = [];
-    if (state.query) fetchResults(false);
+    fetchResults(false);
 });
 
 loadMoreBtn.addEventListener('click', () => {
@@ -248,7 +244,9 @@ async function fetchResults(append) {
 function renderResults(results, append, queryType) {
     if (!append && results.length === 0) {
         emptyState.hidden = false;
-        emptySubText.textContent = `No matches found for "${state.query}". Try a different spelling or term.`;
+        emptySubText.textContent = state.query
+            ? `No matches found for "${state.query}". Try a different spelling or term.`
+            : 'No entries found in the dictionary.';
         return;
     }
 
@@ -313,7 +311,7 @@ function escapeHtml(str) {
 
 function updateStatusBar(total, queryType) {
     if (!state.query) {
-        statusBar.textContent = '';
+        statusBar.textContent = total === 0 ? '' : `${total.toLocaleString()} entr${total !== 1 ? 'ies' : 'y'} in dictionary`;
         return;
     }
     const typeLabel = {
@@ -360,4 +358,4 @@ if ('serviceWorker' in navigator) {
 // ── Init ──────────────────────────────────────
 
 initTheme();
-showInitialState();
+fetchResults(false);
