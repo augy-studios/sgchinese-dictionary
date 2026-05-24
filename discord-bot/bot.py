@@ -329,34 +329,34 @@ async def on_ready():
 
 @tree.command(name="help", description="Show usage guide and all available commands")
 async def cmd_help(interaction: discord.Interaction):
-    embed = discord.Embed(title="SG Chinese Dictionary — Help", colour=ACCENT_COLOUR)
+    embed = discord.Embed(title="SG Chinese Dictionary - Help", colour=ACCENT_COLOUR)
     embed.add_field(
         name="Searching",
         value=(
             "Use `/search <query>` to look up words. Input is auto-detected:\n"
-            "• **Chinese characters** — e.g. `好`, `吃饭`\n"
-            "• **Pinyin** — with or without tone marks (`hǎo` or `hao`)\n"
-            "• **English** — any English word (`good`, `eat rice`)"
+            "• **Chinese characters** - e.g. `好`, `吃饭`\n"
+            "• **Pinyin** - with or without tone marks (`hǎo` or `hao`)\n"
+            "• **English** - any English word (`good`, `eat rice`)"
         ),
         inline=False,
     )
     embed.add_field(
         name="Navigating results",
         value=(
-            "**◀ Prev** / **Next ▶** — browse pages\n"
-            "**⇅ Sort** — change sort order (takes effect immediately)"
+            "**◀ Prev** / **Next ▶** - browse pages\n"
+            "**⇅ Sort** - change sort order (takes effect immediately)"
         ),
         inline=False,
     )
     embed.add_field(
         name="Commands",
         value=(
-            "`/search <query>` — Search the dictionary\n"
-            "`/sort` — Set your default sort order\n"
-            "`/random` — Get a random dictionary entry\n"
-            "`/quote` — Get an inspirational learning quote\n"
-            "`/about` — About this dictionary\n"
-            "`/help` — Show this message"
+            "`/search <query>` - Search the dictionary\n"
+            "`/sort` - Set your default sort order\n"
+            "`/random` - Get a random dictionary entry\n"
+            "`/quote` - Get an inspirational learning quote\n"
+            "`/about` - About this dictionary\n"
+            "`/help` - Show this message"
         ),
         inline=False,
     )
@@ -471,7 +471,7 @@ async def cmd_quote(interaction: discord.Interaction):
         description=f"*\"{quote}\"*",
         colour=ACCENT_COLOUR,
     )
-    embed.set_footer(text=f"— {author}")
+    embed.set_footer(text=f"- {author}")
     await interaction.followup.send(embed=embed)
 
 
