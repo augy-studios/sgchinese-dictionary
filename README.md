@@ -35,7 +35,7 @@ All three platforms share the same [Supabase](https://supabase.com) backend data
 - **Frontend**: Vanilla HTML/CSS/JavaScript, PWA with Service Worker
 - **Hosting**: Vercel (Singapore region)
 - **Bots**: Python (discord.py, Telethon) with aiohttp and aiosqlite
-- **Database**: Supabase (shared), SQLite (per-bot session/preference storage)
+- **Database**: Supabase (shared), SQLite (per-bot interaction and preference storage)
 
 ## Bot Commands
 
@@ -55,6 +55,8 @@ All three platforms share the same [Supabase](https://supabase.com) backend data
 | Command | Description |
 |---------|-------------|
 | Just type anything | Search the dictionary |
+| `/start` | Welcome message and usage guide |
+| `/random` | Get a random entry |
 | `/sort` | Change your sort preference |
 | `/about` | About this bot |
 | `/help` | Show available commands |
