@@ -67,7 +67,7 @@ def _fetch_table_sync(letter: str, query: str, query_type: str) -> list[dict]:
         elif query_type == "ambiguous":
             pattern = build_pinyin_regex(query)
             qb = qb.or_(f"hanyupinyin.imatch.{pattern},translation.ilike.%{query}%")
-        # query_type == "all": no filter — return everything
+        # query_type == "all": no filter - return everything
         result = qb.execute()
         return result.data or []
     except Exception:

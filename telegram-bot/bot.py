@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""SG Chinese Dictionary — Telegram bot (DM-only)."""
+"""SG Chinese Dictionary - Telegram bot (DM-only)."""
 
 import asyncio
 import logging
@@ -63,7 +63,7 @@ def _format_results(
 
     lines = [header]
     for row in results:
-        lines.append(f"\n**{row['chinese']}** — {row['hanyupinyin']}")
+        lines.append(f"\n**{row['chinese']}** - {row['hanyupinyin']}")
         lines.append(row["translation"])
 
     return "\n".join(lines)
@@ -137,7 +137,7 @@ async def _reject_non_dm(_event):
 async def cmd_start(event):
     await event.respond(
         "👋 **Welcome to SG Chinese Dictionary!**\n\n"
-        "Just type any word to search — no command needed.\n\n"
+        "Just type any word to search - no command needed.\n\n"
         "**Search by:**\n"
         "• Chinese characters: `吃饭`\n"
         "• Pinyin (tones optional): `chī fàn` or `chi fan`\n"
@@ -150,19 +150,19 @@ async def cmd_start(event):
 @bot.on(events.NewMessage(pattern="/help$", func=lambda e: e.is_private))
 async def cmd_help(event):
     await event.respond(
-        "**SG Chinese Dictionary — Help**\n\n"
+        "**SG Chinese Dictionary - Help**\n\n"
         "**Searching:**\n"
         "Type anything to search. The bot auto-detects your input type:\n"
-        "• **Chinese** — type Chinese characters (e.g. `好`)\n"
-        "• **Pinyin** — with or without tone marks (`hǎo` or `hao`)\n"
-        "• **English** — type an English word (`good`)\n\n"
+        "• **Chinese** - type Chinese characters (e.g. `好`)\n"
+        "• **Pinyin** - with or without tone marks (`hǎo` or `hao`)\n"
+        "• **English** - type an English word (`good`)\n\n"
         "**Browsing results:**\n"
-        "• ◀ / ▶ — previous / next page\n"
-        "• ⇅ Sort — change sort order\n\n"
+        "• ◀ / ▶ - previous / next page\n"
+        "• ⇅ Sort - change sort order\n\n"
         "**Commands:**\n"
-        "/start — Welcome message\n"
-        "/sort  — Set default sort order\n"
-        "/about — About this dictionary",
+        "/start - Welcome message\n"
+        "/sort  - Set default sort order\n"
+        "/about - About this dictionary",
         parse_mode="md",
     )
 
@@ -256,7 +256,7 @@ async def cb_sort_select(event):
     user_id = event.sender_id
     session = await get_session(user_id)
     if not session.get("query"):
-        # No active search — just persist preference and confirm
+        # No active search - just persist preference and confirm
         await save_session(user_id, sort=sort)
         label = SORT_LABELS.get(sort, sort)
         await event.answer(f"Sort set to: {label}")
@@ -271,7 +271,7 @@ async def cb_sort_select(event):
 
 @bot.on(events.CallbackQuery(data=b"sc"))
 async def cb_sort_cancel(event):
-    """Cancel sort menu — restore previous search results."""
+    """Cancel sort menu - restore previous search results."""
     if not event.is_private:
         await event.answer()
         return
@@ -319,7 +319,7 @@ async def cb_sort_pref(event):
 async def main() -> None:
     await init_db()
     await bot.start(bot_token=config.BOT_TOKEN)
-    logger.info("Bot is running — press Ctrl-C to stop.")
+    logger.info("Bot is running - press Ctrl-C to stop.")
     await bot.run_until_disconnected()
 
 
