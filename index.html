@@ -20,42 +20,244 @@
     <link rel="manifest" href="/manifest.json" />
 
     <meta charset="utf-8">
-    <title>Template | UwU Apps</title>
+    <title>SG Chinese Dictionary | UwU Apps</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="description" content="A simple template app; view live template at a glance!">
+    <meta name="description" content="Singaporean Chinese Dictionary - search local Chinese terms by Hanyu Pinyin, characters, or English.">
 
     <meta property="og:type" content="website">
-    <meta property="og:title" content="Template | UwU Apps" />
+    <meta property="og:title" content="SG Chinese Dictionary | UwU Apps" />
     <meta property="og:site_name" content="UwU Apps" />
-    <meta property="og:description" content="A simple template app; view live template at a glance!" />
+    <meta property="og:description" content="Singaporean Chinese Dictionary - search local Chinese terms by Hanyu Pinyin, characters, or English." />
 
     <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Jua">
     <link rel="stylesheet" href="/style.css">
     <meta name="theme-color" content="#ccffcc" />
 
     <!-- Embed Image -->
-    <link rel="apple-touch-icon" href="/templateicon1.png">
+    <link rel="apple-touch-icon" href="/SGCD-main.png">
     <link rel="icon" href="/favicon.ico">
     <link rel="shortcut icon" href="/favicon.ico">
     <meta name="twitter:card" content="summary">
-    <meta name="twitter:image:src" content="/templateicon1.png">
-    <meta property="og:image" content="/templateicon1.png" />
+    <meta name="twitter:image:src" content="/SGCD-main.png">
+    <meta property="og:image" content="/SGCD-main.png" />
 
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
     <script defer="" src="https://use.fontawesome.com/releases/v6.5.2/js/all.js"></script>
 </head>
 
-<body>
-    Template
+<body data-theme="classic">
+    <!-- ───── HEADER ───── -->
+    <header class="glass-header">
+        <div class="header-inner">
+            <div class="brand">
+                <svg class="brand-icon" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg"
+                    aria-hidden="true">
+                    <rect width="32" height="32" rx="8" fill="var(--brand)" />
+                    <text x="6" y="23" font-size="18" fill="white" font-family="serif" font-weight="bold">字</text>
+                </svg>
+                <div class="brand-text">
+                    <span class="brand-title">SG Chinese</span>
+                    <span class="brand-sub">Dictionary</span>
+                </div>
+            </div>
+
+            <div class="header-actions">
+                <!-- Buy Coffee -->
+                <a href="https://donate.stripe.com/28o2akeAr3hv0DK6oo" target="_blank" rel="noopener noreferrer"
+                    class="btn-icon" title="Buy Augy a Coffee" aria-label="Buy Augy a Coffee">
+                    <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" width="22" height="22"
+                        aria-hidden="true">
+                        <path d="M18 8h1a4 4 0 0 1 0 8h-1" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                            stroke-linejoin="round" />
+                        <path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z" stroke="currentColor" stroke-width="2"
+                            stroke-linecap="round" stroke-linejoin="round" />
+                        <line x1="6" y1="1" x2="6" y2="4" stroke="currentColor" stroke-width="2"
+                            stroke-linecap="round" />
+                        <line x1="10" y1="1" x2="10" y2="4" stroke="currentColor" stroke-width="2"
+                            stroke-linecap="round" />
+                        <line x1="14" y1="1" x2="14" y2="4" stroke="currentColor" stroke-width="2"
+                            stroke-linecap="round" />
+                    </svg>
+                    <span class="btn-icon-label">Buy Augy a Coffee</span>
+                </a>
+
+                <!-- Theme picker -->
+                <button class="btn-icon" id="themeBtn" title="Change Theme" aria-label="Change Theme"
+                    aria-haspopup="dialog">
+                    <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" width="22" height="22"
+                        aria-hidden="true">
+                        <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2" />
+                        <path d="M12 2a10 10 0 0 1 0 20" fill="currentColor" opacity="0.3" />
+                        <circle cx="12" cy="12" r="3" fill="currentColor" />
+                    </svg>
+                    <span class="btn-icon-label">Theme</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- ───── HERO ───── -->
+    <section class="hero">
+        <h1 class="hero-title">Singaporean Chinese Dictionary</h1>
+        <p class="hero-sub">Search local Chinese terms by Hanyu Pinyin, Chinese characters, or English translation.</p>
+    </section>
+
+    <!-- ───── SEARCH + SORT ───── -->
+    <main class="main-container">
+        <div class="search-row glass-card">
+            <div class="search-wrap">
+                <span class="search-icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" width="20" height="20">
+                        <circle cx="11" cy="11" r="8" stroke="currentColor" stroke-width="2" />
+                        <line x1="21" y1="21" x2="16.65" y2="16.65" stroke="currentColor" stroke-width="2"
+                            stroke-linecap="round" />
+                    </svg>
+                </span>
+                <input type="search" id="searchInput" class="search-input"
+                    placeholder="Search by Hanyu Pinyin, 汉字, or English…" autocomplete="off"
+                    aria-label="Search dictionary" />
+                <button class="btn-clear" id="clearBtn" aria-label="Clear search" hidden>
+                    <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" width="18" height="18">
+                        <line x1="18" y1="6" x2="6" y2="18" stroke="currentColor" stroke-width="2"
+                            stroke-linecap="round" />
+                        <line x1="6" y1="6" x2="18" y2="18" stroke="currentColor" stroke-width="2"
+                            stroke-linecap="round" />
+                    </svg>
+                </button>
+            </div>
+
+            <div class="sort-wrap">
+                <label for="sortSelect" class="sort-label">
+                    <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" width="16" height="16"
+                        aria-hidden="true">
+                        <path d="M3 6h18M7 12h10M11 18h2" stroke="currentColor" stroke-width="2"
+                            stroke-linecap="round" />
+                    </svg>
+                    Sort
+                </label>
+                <select id="sortSelect" class="sort-select" aria-label="Sort order">
+                    <option value="hypy_asc">Pinyin A → Z</option>
+                    <option value="hypy_desc">Pinyin Z → A</option>
+                    <option value="en_asc">English A → Z</option>
+                    <option value="en_desc">English Z → A</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- Status bar -->
+        <div class="status-bar" id="statusBar" aria-live="polite" aria-atomic="true"></div>
+
+        <!-- Results -->
+        <div class="results-grid" id="resultsGrid" role="list" aria-label="Dictionary results"></div>
+
+        <!-- Load more -->
+        <div class="load-more-wrap" id="loadMoreWrap" hidden>
+            <button class="btn-load-more" id="loadMoreBtn">
+                <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" width="18" height="18"
+                    aria-hidden="true">
+                    <polyline points="6 9 12 15 18 9" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round" />
+                </svg>
+                Load More
+            </button>
+        </div>
+
+        <!-- Empty state -->
+        <div class="empty-state" id="emptyState" hidden aria-live="polite">
+            <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" width="64" height="64"
+                aria-hidden="true">
+                <circle cx="28" cy="28" r="20" stroke="currentColor" stroke-width="3" opacity="0.4" />
+                <line x1="42" y1="42" x2="56" y2="56" stroke="currentColor" stroke-width="3" stroke-linecap="round"
+                    opacity="0.4" />
+                <line x1="20" y1="28" x2="36" y2="28" stroke="currentColor" stroke-width="3" stroke-linecap="round"
+                    opacity="0.4" />
+                <line x1="28" y1="20" x2="28" y2="36" stroke="currentColor" stroke-width="3" stroke-linecap="round"
+                    opacity="0.4" />
+            </svg>
+            <p class="empty-title">No results found</p>
+            <p class="empty-sub" id="emptySubText"></p>
+        </div>
+
+        <!-- Initial state -->
+        <div class="initial-state" id="initialState">
+            <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" width="64" height="64"
+                aria-hidden="true">
+                <rect x="8" y="8" width="48" height="48" rx="8" stroke="currentColor" stroke-width="3" opacity="0.35" />
+                <text x="16" y="46" font-size="30" fill="currentColor" opacity="0.35" font-family="serif">字</text>
+            </svg>
+            <p class="initial-title">Start Searching</p>
+            <p class="initial-sub">Type in the search box to look up Singaporean Chinese terms.</p>
+        </div>
+
+        <!-- Loader -->
+        <div class="loader-wrap" id="loaderWrap" hidden aria-label="Loading" aria-live="polite">
+            <div class="loader"></div>
+        </div>
+    </main>
+
+    <!-- ───── FOOTER ───── -->
+    <footer class="site-footer">
+        <p>Built with care by <strong>Augy Studios</strong> &middot; <a href="https://uwuapps.org" target="_blank"
+                rel="noopener">uwuapps.org</a></p>
+    </footer>
+
+    <!-- ───── THEME MODAL ───── -->
+    <div class="modal-backdrop" id="themeModalBackdrop" hidden aria-modal="true" role="dialog"
+        aria-label="Choose Theme">
+        <div class="modal glass-card">
+            <div class="modal-header">
+                <h2 class="modal-title">Choose Theme</h2>
+                <button class="btn-icon modal-close" id="themeModalClose" aria-label="Close theme picker">
+                    <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" width="20" height="20">
+                        <line x1="18" y1="6" x2="6" y2="18" stroke="currentColor" stroke-width="2"
+                            stroke-linecap="round" />
+                        <line x1="6" y1="6" x2="18" y2="18" stroke="currentColor" stroke-width="2"
+                            stroke-linecap="round" />
+                    </svg>
+                </button>
+            </div>
+            <div class="theme-grid">
+                <button class="theme-chip active" data-theme="classic" aria-pressed="true">
+                    <span class="theme-swatch" style="background:#ccffcc;"></span>
+                    Classic
+                </button>
+                <button class="theme-chip" data-theme="notgreen1" aria-pressed="false">
+                    <span class="theme-swatch" style="background:#ffcccc;"></span>
+                    Not Green 1
+                </button>
+                <button class="theme-chip" data-theme="notgreen2" aria-pressed="false">
+                    <span class="theme-swatch" style="background:#ccccff;"></span>
+                    Not Green 2
+                </button>
+                <button class="theme-chip" data-theme="notgreen3" aria-pressed="false">
+                    <span class="theme-swatch" style="background:#ffffcc;"></span>
+                    Not Green 3
+                </button>
+                <button class="theme-chip" data-theme="notgreen4" aria-pressed="false">
+                    <span class="theme-swatch" style="background:#ffccff;"></span>
+                    Not Green 4
+                </button>
+                <button class="theme-chip" data-theme="notgreen5" aria-pressed="false">
+                    <span class="theme-swatch" style="background:#ccffff;"></span>
+                    Not Green 5
+                </button>
+                <button class="theme-chip" data-theme="white" aria-pressed="false">
+                    <span class="theme-swatch" style="background:#ffffff; border: 1px solid #ddd;"></span>
+                    Really Really Light Green
+                </button>
+            </div>
+        </div>
+    </div>
+
 
     <script src="/script.js"></script>
 
     <script>
         if ('serviceWorker' in navigator) {
-          navigator.serviceWorker.register('/sw.js');
+            navigator.serviceWorker.register('/sw.js');
         }
     </script>
-    
+
 </body>
 
 </html>

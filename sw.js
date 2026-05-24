@@ -1,11 +1,11 @@
-const CACHE = "template-offline-v1";
+const CACHE = "sgchn-dict-offline-v1";
 
 const ASSETS = [
   "/",
   "/index.html",
   "/style.css",
   "/app.js",
-  "/templateicon1.png",
+  "/SGCD-main.png",
   "/favicon.ico",
   "/manifest.json"
 ];
@@ -28,15 +28,30 @@ self.addEventListener("activate", (event) => {
   self.clients.claim();
 });
 
-self.addEventListener("fetch", (event) => {
+self.addEventListener('fetch', event => {
+  const {
+    request
+  } = event;
+  const url = new URL(request.url);
+
+  // Don't cache API calls
+  if (url.pathname.startsWith('/api/')) {
+    event.respondWith(fetch(request));
+    return;
+  }
+
+  // Cache-first for static assets
   event.respondWith(
-    caches.match(event.request).then((cached) => {
-      const fetched = fetch(event.request).then((response) => {
-        const clone = response.clone();
-        caches.open(CACHE).then((cache) => cache.put(event.request, clone));
+    caches.match(request).then(cached => {
+      if (cached) return cached;
+      return fetch(request).then(response => {
+        if (!response || response.status !== 200 || response.type !== 'basic') {
+          return response;
+        }
+        const toCache = response.clone();
+        caches.open(CACHE).then(cache => cache.put(request, toCache));
         return response;
-      }).catch(() => cached);
-      return cached || fetched;
+      });
     })
   );
 });

@@ -1,0 +1,12 @@
+{
+    "name": "sg-chinese-dictionary",
+    "version": "1.0.0",
+    "description": "Singaporean Chinese Dictionary PWA",
+    "private": true,
+    "engines": {
+        "node": ">=18"
+    },
+    "dependencies": {
+        "@supabase/supabase-js": "^2.45.0"
+    }
+}
