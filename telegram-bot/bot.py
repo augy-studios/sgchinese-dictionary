@@ -172,8 +172,7 @@ async def cmd_about(event):
     await event.respond(
         "**SG Chinese Dictionary**\n\n"
         "A dictionary of Chinese words and phrases, including Mandarin "
-        "and usage common in Singapore.\n\n"
-        "🤖 Built with Telethon  ·  Powered by Supabase",
+        "and usage common in Singapore.",
         parse_mode="md",
     )
 
