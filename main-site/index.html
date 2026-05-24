@@ -22,14 +22,16 @@
     <meta charset="utf-8">
     <title>SG Chinese Dictionary | UwU Apps</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="description" content="Singaporean Chinese Dictionary - search local Chinese terms by Hanyu Pinyin, characters, or English.">
+    <meta name="description"
+        content="Singaporean Chinese Dictionary - search local Chinese terms by Hanyu Pinyin, characters, or English.">
 
     <meta property="og:type" content="website">
     <meta property="og:title" content="SG Chinese Dictionary | UwU Apps" />
     <meta property="og:site_name" content="UwU Apps" />
-    <meta property="og:description" content="Singaporean Chinese Dictionary - search local Chinese terms by Hanyu Pinyin, characters, or English." />
+    <meta property="og:description"
+        content="Singaporean Chinese Dictionary - search local Chinese terms by Hanyu Pinyin, characters, or English." />
 
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Jua">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Jua&family=Inter:wght@400;500&display=swap">
     <link rel="stylesheet" href="/style.css">
     <meta name="theme-color" content="#ccffcc" />
 
@@ -150,15 +152,24 @@
         <!-- Results -->
         <div class="results-grid" id="resultsGrid" role="list" aria-label="Dictionary results"></div>
 
-        <!-- Load more -->
-        <div class="load-more-wrap" id="loadMoreWrap" hidden>
-            <button class="btn-load-more" id="loadMoreBtn">
-                <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" width="18" height="18"
+        <!-- Pagination -->
+        <div class="pagination-wrap" id="paginationWrap" hidden>
+            <button class="btn-page" id="prevBtn" aria-label="Previous page">
+                <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" width="16" height="16"
                     aria-hidden="true">
-                    <polyline points="6 9 12 15 18 9" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                    <polyline points="15 18 9 12 15 6" stroke="currentColor" stroke-width="2" stroke-linecap="round"
                         stroke-linejoin="round" />
                 </svg>
-                Load More
+                Prev
+            </button>
+            <span class="page-indicator" id="pageIndicator">Page 1 of 1</span>
+            <button class="btn-page" id="nextBtn" aria-label="Next page">
+                Next
+                <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" width="16" height="16"
+                    aria-hidden="true">
+                    <polyline points="9 18 15 12 9 6" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round" />
+                </svg>
             </button>
         </div>
 
@@ -178,17 +189,6 @@
             <p class="empty-sub" id="emptySubText"></p>
         </div>
 
-        <!-- Initial state -->
-        <div class="initial-state" id="initialState" hidden>
-            <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" width="64" height="64"
-                aria-hidden="true">
-                <rect x="8" y="8" width="48" height="48" rx="8" stroke="currentColor" stroke-width="3" opacity="0.35" />
-                <text x="16" y="46" font-size="30" fill="currentColor" opacity="0.35" font-family="serif">字</text>
-            </svg>
-            <p class="initial-title">Start Searching</p>
-            <p class="initial-sub">Type in the search box to look up Singaporean Chinese terms.</p>
-        </div>
-
         <!-- Loader -->
         <div class="loader-wrap" id="loaderWrap" hidden aria-label="Loading" aria-live="polite">
             <div class="loader"></div>
@@ -197,7 +197,11 @@
 
     <!-- ───── FOOTER ───── -->
     <footer class="site-footer">
-        <p>Built with <svg viewBox="0 0 24 24" fill="#4caf50" xmlns="http://www.w3.org/2000/svg" width="16" height="16" aria-label="love" style="vertical-align:-3px;display:inline-block"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg> by <strong>Augy</strong> &middot; <a href="https://uwuapps.org" target="_blank"
+        <p>Built with <svg viewBox="0 0 24 24" fill="#4caf50" xmlns="http://www.w3.org/2000/svg" width="16" height="16"
+                aria-label="love" style="vertical-align:-3px;display:inline-block">
+                <path
+                    d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
+                </svg> by <strong>Augy</strong> &middot; <a href="https://uwuapps.org" target="_blank"
                 rel="noopener">uwuapps.org</a></p>
     </footer>
 

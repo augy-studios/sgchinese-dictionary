@@ -12,51 +12,17 @@ const AVAILABLE_LETTERS = [
 
 // Pinyin tone-mark → base letter map for normalisation
 const TONE_MAP = {
-    'ā': 'a',
-    'á': 'a',
-    'ǎ': 'a',
-    'à': 'a',
-    'ē': 'e',
-    'é': 'e',
-    'ě': 'e',
-    'è': 'e',
-    'ī': 'i',
-    'í': 'i',
-    'ǐ': 'i',
-    'ì': 'i',
-    'ō': 'o',
-    'ó': 'o',
-    'ǒ': 'o',
-    'ò': 'o',
-    'ū': 'u',
-    'ú': 'u',
-    'ǔ': 'u',
-    'ù': 'u',
-    'ǖ': 'v',
-    'ǘ': 'v',
-    'ǚ': 'v',
-    'ǜ': 'v',
-    'ü': 'v',
-    'Ā': 'A',
-    'Á': 'A',
-    'Ǎ': 'A',
-    'À': 'A',
-    'Ē': 'E',
-    'É': 'E',
-    'Ě': 'E',
-    'È': 'E',
-    'Ī': 'I',
-    'Í': 'I',
-    'Ǐ': 'I',
-    'Ì': 'I',
-    'Ō': 'O',
-    'Ó': 'O',
-    'Ǒ': 'O',
-    'Ò': 'O',
-    'Ū': 'U',
-    'Ú': 'U',
-    'Ǔ': 'U',
-    'Ù': 'U',
+    'ā': 'a', 'á': 'a', 'ǎ': 'a', 'à': 'a',
+    'ē': 'e', 'é': 'e', 'ě': 'e', 'è': 'e',
+    'ī': 'i', 'í': 'i', 'ǐ': 'i', 'ì': 'i',
+    'ō': 'o', 'ó': 'o', 'ǒ': 'o', 'ò': 'o',
+    'ū': 'u', 'ú': 'u', 'ǔ': 'u', 'ù': 'u',
+    'ǖ': 'v', 'ǘ': 'v', 'ǚ': 'v', 'ǜ': 'v', 'ü': 'v',
+    'Ā': 'A', 'Á': 'A', 'Ǎ': 'A', 'À': 'A',
+    'Ē': 'E', 'É': 'E', 'Ě': 'E', 'È': 'E',
+    'Ī': 'I', 'Í': 'I', 'Ǐ': 'I', 'Ì': 'I',
+    'Ō': 'O', 'Ó': 'O', 'Ǒ': 'O', 'Ò': 'O',
+    'Ū': 'U', 'Ú': 'U', 'Ǔ': 'U', 'Ù': 'U',
 };
 
 function normalisePinyin(str) {
@@ -65,18 +31,11 @@ function normalisePinyin(str) {
     ).toLowerCase();
 }
 
-// Detect query type: 'chinese' | 'pinyin' | 'english'
 function detectQueryType(q) {
-    // Any CJK character → Chinese
-    if (/[\u4e00-\u9fff\u3400-\u4dbf\uff00-\uffef]/.test(q)) return 'chinese';
-    // Pinyin heuristic: contains tone marks OR is entirely letters/numbers/spaces
-    // and has common pinyin syllable patterns
+    if (/[一-鿿㐀-䶿＀-￯]/.test(q)) return 'chinese';
     const normalised = normalisePinyin(q);
-    const looksLikePinyin = /^[a-z\s0-9]+$/i.test(normalised) &&
-        /[aeiouv]/i.test(normalised);
-    // If it has tone marks, definitely pinyin
+    const looksLikePinyin = /^[a-z\s0-9]+$/i.test(normalised) && /[aeiouv]/i.test(normalised);
     if (/[āáǎàēéěèīíǐìōóǒòūúǔùǖǘǚǜü]/i.test(q)) return 'pinyin';
-    // Short purely alphabetic → could be pinyin OR english; we search both
     return looksLikePinyin ? 'ambiguous' : 'english';
 }
 
@@ -85,30 +44,30 @@ function detectQueryType(q) {
 const state = {
     query: '',
     sort: 'hypy_asc',
-    offset: 0,
+    page: 1,
     total: 0,
-    results: [],
     loading: false,
     debounceTimer: null,
 };
 
 // ── DOM Refs ──────────────────────────────────
 
-const searchInput = document.getElementById('searchInput');
-const clearBtn = document.getElementById('clearBtn');
-const sortSelect = document.getElementById('sortSelect');
-const resultsGrid = document.getElementById('resultsGrid');
-const statusBar = document.getElementById('statusBar');
-const loadMoreWrap = document.getElementById('loadMoreWrap');
-const loadMoreBtn = document.getElementById('loadMoreBtn');
-const emptyState = document.getElementById('emptyState');
-const emptySubText = document.getElementById('emptySubText');
-const initialState = document.getElementById('initialState');
-const loaderWrap = document.getElementById('loaderWrap');
-const themeBtn = document.getElementById('themeBtn');
+const searchInput    = document.getElementById('searchInput');
+const clearBtn       = document.getElementById('clearBtn');
+const sortSelect     = document.getElementById('sortSelect');
+const resultsGrid    = document.getElementById('resultsGrid');
+const statusBar      = document.getElementById('statusBar');
+const paginationWrap = document.getElementById('paginationWrap');
+const prevBtn        = document.getElementById('prevBtn');
+const nextBtn        = document.getElementById('nextBtn');
+const pageIndicator  = document.getElementById('pageIndicator');
+const emptyState     = document.getElementById('emptyState');
+const emptySubText   = document.getElementById('emptySubText');
+const loaderWrap     = document.getElementById('loaderWrap');
+const themeBtn       = document.getElementById('themeBtn');
 const themeModalBackdrop = document.getElementById('themeModalBackdrop');
-const themeModalClose = document.getElementById('themeModalClose');
-const themeChips = document.querySelectorAll('.theme-chip');
+const themeModalClose    = document.getElementById('themeModalClose');
+const themeChips         = document.querySelectorAll('.theme-chip');
 
 // ── Theme ─────────────────────────────────────
 
@@ -161,9 +120,8 @@ searchInput.addEventListener('input', () => {
     clearTimeout(state.debounceTimer);
     state.debounceTimer = setTimeout(() => {
         state.query = q;
-        state.offset = 0;
-        state.results = [];
-        fetchResults(false);
+        state.page = 1;
+        fetchResults();
     }, 350);
 });
 
@@ -171,24 +129,35 @@ clearBtn.addEventListener('click', () => {
     searchInput.value = '';
     clearBtn.hidden = true;
     state.query = '';
-    state.offset = 0;
-    state.results = [];
-    fetchResults(false);
+    state.page = 1;
+    fetchResults();
     searchInput.focus();
 });
 
 sortSelect.addEventListener('change', () => {
     state.sort = sortSelect.value;
-    state.offset = 0;
-    state.results = [];
-    fetchResults(false);
+    state.page = 1;
+    fetchResults();
 });
 
-loadMoreBtn.addEventListener('click', () => {
-    state.offset += PAGE_SIZE;
-    fetchResults(true);
+prevBtn.addEventListener('click', () => {
+    if (state.page > 1) {
+        state.page--;
+        fetchResults();
+        resultsGrid.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
 });
 
+nextBtn.addEventListener('click', () => {
+    const totalPages = Math.ceil(state.total / PAGE_SIZE);
+    if (state.page < totalPages) {
+        state.page++;
+        fetchResults();
+        resultsGrid.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+});
+
+// Copy handler (delegated)
 resultsGrid.addEventListener('click', e => {
     const btn = e.target.closest('.btn-copy');
     if (!btn) return;
@@ -211,45 +180,34 @@ resultsGrid.addEventListener('click', e => {
 
 // ── Fetch ─────────────────────────────────────
 
-async function fetchResults(append) {
+async function fetchResults() {
     if (state.loading) return;
     state.loading = true;
 
     setLoading(true);
-    if (!append) {
-        resultsGrid.innerHTML = '';
-        emptyState.hidden = true;
-        initialState.hidden = true;
-        loadMoreWrap.hidden = true;
-        statusBar.textContent = '';
-    }
+    resultsGrid.innerHTML = '';
+    emptyState.hidden = true;
+    paginationWrap.hidden = true;
+    statusBar.textContent = '';
 
+    const offset = (state.page - 1) * PAGE_SIZE;
     const params = new URLSearchParams({
         q: state.query,
         sort: state.sort,
-        offset: state.offset,
+        offset,
         limit: PAGE_SIZE,
     });
 
     try {
         const res = await fetch(`/api/search?${params}`);
         if (!res.ok) throw new Error(`Server error: ${res.status}`);
-        const data = await res.json();
-
-        const {
-            results,
-            total,
-            queryType
-        } = data;
-
-        if (!append) state.results = results;
-        else state.results = state.results.concat(results);
+        const { results, total, queryType } = await res.json();
 
         state.total = total;
 
-        renderResults(results, append, queryType);
+        renderResults(results, queryType);
         updateStatusBar(total, queryType);
-        updateLoadMore();
+        updatePagination();
     } catch (err) {
         console.error(err);
         statusBar.textContent = 'Something went wrong. Please try again.';
@@ -261,18 +219,14 @@ async function fetchResults(append) {
 
 // ── Render ────────────────────────────────────
 
-function renderResults(results, append, queryType) {
-    if (!append && results.length === 0) {
+function renderResults(results, queryType) {
+    if (results.length === 0) {
         emptyState.hidden = false;
-        initialState.hidden = true;
         emptySubText.textContent = state.query
             ? `No matches found for "${state.query}". Try a different spelling or term.`
             : 'No entries found in the dictionary.';
         return;
     }
-
-    emptyState.hidden = true;
-    initialState.hidden = true;
 
     const q = state.query;
 
@@ -280,7 +234,7 @@ function renderResults(results, append, queryType) {
         const card = document.createElement('div');
         card.className = 'entry-card';
         card.setAttribute('role', 'listitem');
-        card.style.animationDelay = `${(i % PAGE_SIZE) * 25}ms`;
+        card.style.animationDelay = `${i * 25}ms`;
 
         card.innerHTML = `
       <button class="btn-copy" aria-label="Copy entry"
@@ -304,12 +258,7 @@ function renderResults(results, append, queryType) {
 function highlightMatch(text, query, field) {
     if (!query || !text) return escapeHtml(text);
 
-    // For Chinese field, highlight exact substring
-    let escaped = escapeHtml(text);
-    let escapedQ = escapeHtml(query);
-
     try {
-        // For pinyin, normalise both before matching but display original
         if (field === 'pinyin') {
             const normText = normalisePinyin(text);
             const normQ = normalisePinyin(query);
@@ -331,7 +280,7 @@ function highlightMatch(text, query, field) {
         }
     } catch (_) {}
 
-    return escaped;
+    return escapeHtml(text);
 }
 
 function escapeHtml(str) {
@@ -352,30 +301,28 @@ function updateStatusBar(total, queryType) {
         pinyin: 'Hanyu Pinyin',
         english: 'English',
         ambiguous: 'Pinyin / English',
-    } [queryType] || '';
-    statusBar.textContent = total === 0 ?
-        `No results found` :
-        `${total.toLocaleString()} result${total !== 1 ? 's' : ''} found${typeLabel ? ` · searched by ${typeLabel}` : ''}`;
+    }[queryType] || '';
+    statusBar.textContent = total === 0
+        ? `No results found`
+        : `${total.toLocaleString()} result${total !== 1 ? 's' : ''} found${typeLabel ? ` · searched by ${typeLabel}` : ''}`;
 }
 
-function updateLoadMore() {
-    const shown = state.results.length;
-    loadMoreWrap.hidden = shown >= state.total;
+function updatePagination() {
+    const totalPages = Math.ceil(state.total / PAGE_SIZE);
+    if (totalPages <= 1) {
+        paginationWrap.hidden = true;
+        return;
+    }
+    paginationWrap.hidden = false;
+    pageIndicator.textContent = `Page ${state.page} of ${totalPages}`;
+    prevBtn.disabled = state.page <= 1;
+    nextBtn.disabled = state.page >= totalPages;
 }
 
 // ── UI States ─────────────────────────────────
 
 function setLoading(on) {
     loaderWrap.hidden = !on;
-}
-
-function showInitialState() {
-    resultsGrid.innerHTML = '';
-    emptyState.hidden = true;
-    loadMoreWrap.hidden = true;
-    loaderWrap.hidden = true;
-    statusBar.textContent = '';
-    initialState.hidden = false;
 }
 
 // ── PWA Service Worker ────────────────────────
@@ -391,4 +338,4 @@ if ('serviceWorker' in navigator) {
 // ── Init ──────────────────────────────────────
 
 initTheme();
-fetchResults(false);
+fetchResults();
