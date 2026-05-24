@@ -401,13 +401,31 @@ class StandaloneSortView(discord.ui.View):
 
 # ── Events
 
+async def _update_presence():
+    guild_count = len(client.guilds)
+    await client.change_presence(
+        activity=discord.Game(name=f"SG Chinese words with {guild_count} guild{'s' if guild_count != 1 else ''}")
+    )
+
+
 @client.event
 async def on_ready():
     await init_db()
     await tree.sync()
+    await _update_presence()
     logger.info("Logged in as %s  (ID: %s)", client.user, client.user.id)
     logger.info("Slash commands synced globally.")
     asyncio.create_task(_restore_persistent_views())
+
+
+@client.event
+async def on_guild_join(guild: discord.Guild):
+    await _update_presence()
+
+
+@client.event
+async def on_guild_remove(guild: discord.Guild):
+    await _update_presence()
 
 
 async def _restore_persistent_views():
