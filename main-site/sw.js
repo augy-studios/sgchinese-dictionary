@@ -1,4 +1,4 @@
-const CACHE = "sgchn-dict-offline-v3";
+const CACHE = "sgchn-dict-offline-v4";
 
 const ASSETS = [
   "/",
@@ -29,14 +29,28 @@ self.addEventListener("activate", (event) => {
 });
 
 self.addEventListener('fetch', event => {
-  const {
-    request
-  } = event;
+  const { request } = event;
   const url = new URL(request.url);
 
   // Don't cache API calls
   if (url.pathname.startsWith('/api/')) {
     event.respondWith(fetch(request));
+    return;
+  }
+
+  // On normal refresh (F5/Ctrl+R), the browser sets cache: 'no-cache'.
+  // Go network-first so the cache is always updated on refresh.
+  // Hard refresh (Ctrl+Shift+R) bypasses the SW entirely at the browser level.
+  if (request.cache === 'no-cache') {
+    event.respondWith(
+      fetch(request).then(response => {
+        if (response && response.status === 200 && response.type === 'basic') {
+          const toCache = response.clone();
+          caches.open(CACHE).then(cache => cache.put(request, toCache));
+        }
+        return response;
+      }).catch(() => caches.match(request))
+    );
     return;
   }
 

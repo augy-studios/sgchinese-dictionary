@@ -206,8 +206,18 @@ async function fetchResults() {
         updateStatusBar(total, queryType);
         updatePagination();
     } catch (err) {
-        console.error(err);
-        statusBar.textContent = 'Something went wrong. Please try again.';
+        try {
+            const { results, total, queryType } = await searchOffline(state.query, state.sort, offset, PAGE_SIZE);
+            state.total = total;
+            renderResults(results, queryType);
+            updateStatusBar(total, queryType);
+            updatePagination();
+            const base = statusBar.textContent;
+            statusBar.textContent = base ? `${base} · offline` : 'offline';
+        } catch (offlineErr) {
+            console.error(err);
+            statusBar.textContent = 'Something went wrong. Please try again.';
+        }
     } finally {
         state.loading = false;
         setLoading(false);
@@ -322,6 +332,119 @@ function setLoading(on) {
     loaderWrap.hidden = !on;
 }
 
+// ── Offline Cache (IndexedDB)
+
+const IDB_NAME = 'sgchn-dict-offline';
+const IDB_VERSION = 1;
+const IDB_STORE = 'entries';
+const PREFETCH_BATCH = 100;
+const PREFETCH_TTL_MS = 60 * 60 * 1000; // re-prefetch if data is older than 1 hour
+
+let _idbPromise = null;
+
+function openIDB() {
+    if (_idbPromise) return _idbPromise;
+    _idbPromise = new Promise((resolve, reject) => {
+        const req = indexedDB.open(IDB_NAME, IDB_VERSION);
+        req.onupgradeneeded = e => {
+            const db = e.target.result;
+            if (!db.objectStoreNames.contains(IDB_STORE)) {
+                db.createObjectStore(IDB_STORE, { keyPath: '_key' });
+            }
+        };
+        req.onsuccess = e => resolve(e.target.result);
+        req.onerror = e => { _idbPromise = null; reject(e.target.error); };
+    });
+    return _idbPromise;
+}
+
+async function idbPutAll(entries) {
+    const db = await openIDB();
+    return new Promise((resolve, reject) => {
+        const tx = db.transaction(IDB_STORE, 'readwrite');
+        const store = tx.objectStore(IDB_STORE);
+        entries.forEach(e => store.put(e));
+        tx.oncomplete = resolve;
+        tx.onerror = e => reject(e.target.error);
+    });
+}
+
+async function idbGetAll() {
+    const db = await openIDB();
+    return new Promise((resolve, reject) => {
+        const tx = db.transaction(IDB_STORE, 'readonly');
+        const req = tx.objectStore(IDB_STORE).getAll();
+        req.onsuccess = () => resolve(req.result);
+        req.onerror = e => reject(e.target.error);
+    });
+}
+
+async function idbCount() {
+    const db = await openIDB();
+    return new Promise((resolve, reject) => {
+        const tx = db.transaction(IDB_STORE, 'readonly');
+        const req = tx.objectStore(IDB_STORE).count();
+        req.onsuccess = () => resolve(req.result);
+        req.onerror = e => reject(e.target.error);
+    });
+}
+
+async function prefetchAllEntries() {
+    try {
+        const lastTs = parseInt(localStorage.getItem('sgchn_prefetch_ts') || '0', 10);
+        const cached = await idbCount();
+        // Skip if recently prefetched and data exists; always run on online event (caller clears ts)
+        if (cached > 0 && Date.now() - lastTs < PREFETCH_TTL_MS) return;
+
+        const res = await fetch('/api/all');
+        if (!res.ok) return;
+        const { entries } = await res.json();
+        if (!entries || !entries.length) return;
+
+        const keyed = entries.map(e => ({ ...e, _key: `${e.chinese}__${e.hanyupinyin}` }));
+        for (let i = 0; i < keyed.length; i += PREFETCH_BATCH) {
+            await idbPutAll(keyed.slice(i, i + PREFETCH_BATCH));
+        }
+        localStorage.setItem('sgchn_prefetch_ts', String(Date.now()));
+    } catch (_) {}
+}
+
+async function searchOffline(query, sort, offset, limit) {
+    const all = await idbGetAll();
+    const queryType = detectQueryType(query);
+    const q = query.trim();
+
+    let filtered;
+    if (!q) {
+        filtered = all;
+    } else if (queryType === 'chinese') {
+        filtered = all.filter(e => e.chinese && e.chinese.includes(q));
+    } else if (queryType === 'pinyin') {
+        const normQ = normalisePinyin(q);
+        filtered = all.filter(e => e.hanyupinyin && normalisePinyin(e.hanyupinyin).includes(normQ));
+    } else if (queryType === 'ambiguous') {
+        const normQ = normalisePinyin(q);
+        const lowerQ = q.toLowerCase();
+        filtered = all.filter(e =>
+            (e.hanyupinyin && normalisePinyin(e.hanyupinyin).includes(normQ)) ||
+            (e.translation && e.translation.toLowerCase().includes(lowerQ))
+        );
+    } else {
+        const lowerQ = q.toLowerCase();
+        filtered = all.filter(e => e.translation && e.translation.toLowerCase().includes(lowerQ));
+    }
+
+    const dirMap = { hypy_asc: ['hanyupinyin', 1], hypy_desc: ['hanyupinyin', -1], en_asc: ['translation', 1], en_desc: ['translation', -1] };
+    const [field, dir] = dirMap[sort] || dirMap.hypy_asc;
+    filtered.sort((a, b) => {
+        const va = (a[field] || '').toLowerCase();
+        const vb = (b[field] || '').toLowerCase();
+        return va < vb ? -dir : va > vb ? dir : 0;
+    });
+
+    return { results: filtered.slice(offset, offset + limit), total: filtered.length, queryType };
+}
+
 // ── PWA Service Worker
 
 if ('serviceWorker' in navigator) {
@@ -329,8 +452,15 @@ if ('serviceWorker' in navigator) {
         navigator.serviceWorker.register('/sw.js').catch(err => {
             console.warn('SW registration failed:', err);
         });
+        if (navigator.onLine) prefetchAllEntries();
     });
 }
+
+window.addEventListener('online', () => {
+    // Clear the TTL so prefetch always runs when coming back online
+    localStorage.removeItem('sgchn_prefetch_ts');
+    prefetchAllEntries();
+});
 
 // ── Init
 
