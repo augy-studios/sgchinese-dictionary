@@ -47,6 +47,24 @@ function normalisePinyin(str) {
     ).toLowerCase();
 }
 
+// Expands each bare vowel into a character class that matches all tonal variants.
+// e.g. "jie" → "ji[eēéěè]", "a jie" → "[aāáǎà] ji[eēéěè]"
+const ACCENT_CLASS = {
+    a: '[aāáǎà]',
+    e: '[eēéěè]',
+    i: '[iīíǐì]',
+    o: '[oōóǒò]',
+    u: '[uūúǔù]',
+    v: '[vüǖǘǚǜ]',
+};
+
+function buildPinyinRegex(query) {
+    const norm = normalisePinyin(query);
+    // Escape regex metacharacters (but NOT brackets — we're about to add them)
+    const escaped = norm.replace(/[.+*?^${}()|[\]\\]/g, '\\$&');
+    return escaped.replace(/[aeiouv]/g, ch => ACCENT_CLASS[ch] || ch);
+}
+
 function detectQueryType(q) {
     if (/[\u4e00-\u9fff\u3400-\u4dbf]/.test(q)) return 'chinese';
     if (/[āáǎàēéěèīíǐìōóǒòūúǔùǖǘǚǜü]/i.test(q)) return 'pinyin';
@@ -148,10 +166,12 @@ module.exports = async function handler(req, res) {
                 if (queryType === 'chinese') {
                     qb = qb.ilike('chinese', `%${query}%`);
                 } else if (queryType === 'pinyin') {
-                    qb = qb.or(`hanyupinyin.ilike.%${query}%,hanyupinyin.ilike.%${normQ}%`);
+                    // imatch = case-insensitive regex; expands e→[eēéěè] etc.
+                    qb = qb.filter('hanyupinyin', 'imatch', buildPinyinRegex(query));
                 } else if (queryType === 'ambiguous') {
+                    const pinyinPattern = buildPinyinRegex(query);
                     qb = qb.or(
-                        `hanyupinyin.ilike.%${normQ}%,translation.ilike.%${query}%`
+                        `hanyupinyin.imatch.${pinyinPattern},translation.ilike.%${query}%`
                     );
                 }
                 // queryType === 'all': no filter — fetch everything

@@ -264,11 +264,15 @@ async function fetchResults(append) {
 function renderResults(results, append, queryType) {
     if (!append && results.length === 0) {
         emptyState.hidden = false;
+        initialState.hidden = true;
         emptySubText.textContent = state.query
             ? `No matches found for "${state.query}". Try a different spelling or term.`
             : 'No entries found in the dictionary.';
         return;
     }
+
+    emptyState.hidden = true;
+    initialState.hidden = true;
 
     const q = state.query;
 
