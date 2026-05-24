@@ -450,6 +450,7 @@ body {
 
 /* ── Entry Card ── */
 .entry-card {
+  position: relative;
   background: var(--glass-bg);
   border: 1px solid var(--glass-border);
   box-shadow: 0 2px 12px var(--glass-shadow), inset 0 1px 0 rgba(255, 255, 255, 0.5);
@@ -462,6 +463,36 @@ body {
   gap: 8px;
   transition: transform 0.18s, box-shadow 0.18s;
   animation: fadeIn 0.25s ease both;
+}
+
+.btn-copy {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--text-muted);
+  opacity: 0;
+  padding: 5px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  transition: opacity 0.15s, color 0.15s, background 0.15s;
+}
+
+.entry-card:hover .btn-copy {
+  opacity: 1;
+}
+
+.btn-copy:hover {
+  color: var(--text);
+  background: var(--brand);
+}
+
+.btn-copy.copied {
+  opacity: 1;
+  color: var(--brand-dark);
 }
 
 .entry-card:hover {

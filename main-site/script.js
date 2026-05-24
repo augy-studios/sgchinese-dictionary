@@ -189,6 +189,26 @@ loadMoreBtn.addEventListener('click', () => {
     fetchResults(true);
 });
 
+resultsGrid.addEventListener('click', e => {
+    const btn = e.target.closest('.btn-copy');
+    if (!btn) return;
+    const text = [btn.dataset.chinese, btn.dataset.pinyin, btn.dataset.translation]
+        .filter(Boolean).join('\n');
+    navigator.clipboard.writeText(text).then(() => {
+        btn.classList.add('copied');
+        btn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" width="16" height="16" aria-hidden="true">
+          <polyline points="20 6 9 17 4 12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>`;
+        setTimeout(() => {
+            btn.classList.remove('copied');
+            btn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" width="16" height="16" aria-hidden="true">
+              <rect x="9" y="9" width="13" height="13" rx="2" stroke="currentColor" stroke-width="2"/>
+              <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" stroke="currentColor" stroke-width="2"/>
+            </svg>`;
+        }, 1500);
+    });
+});
+
 // ── Fetch ─────────────────────────────────────
 
 async function fetchResults(append) {
@@ -259,6 +279,15 @@ function renderResults(results, append, queryType) {
         card.style.animationDelay = `${(i % PAGE_SIZE) * 25}ms`;
 
         card.innerHTML = `
+      <button class="btn-copy" aria-label="Copy entry"
+        data-chinese="${escapeHtml(entry.chinese || '')}"
+        data-pinyin="${escapeHtml(entry.hanyupinyin || '')}"
+        data-translation="${escapeHtml(entry.translation || '')}">
+        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" width="16" height="16" aria-hidden="true">
+          <rect x="9" y="9" width="13" height="13" rx="2" stroke="currentColor" stroke-width="2"/>
+          <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" stroke="currentColor" stroke-width="2"/>
+        </svg>
+      </button>
       <div class="entry-chinese">${highlightMatch(entry.chinese || '', q, 'chinese')}</div>
       <div class="entry-pinyin">${highlightMatch(entry.hanyupinyin || '', q, 'pinyin')}</div>
       <div class="entry-translation">${highlightMatch(entry.translation || '', q, 'english')}</div>
