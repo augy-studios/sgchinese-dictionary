@@ -1,4 +1,5 @@
 import re
+import random
 import asyncio
 from supabase import create_client, Client
 
@@ -121,3 +122,14 @@ async def do_search_query(
         "total": total,
         "query_type": query_type,
     }
+
+
+async def get_random_entry() -> dict | None:
+    """Return a single random entry from a randomly chosen letter table."""
+    letters = AVAILABLE_LETTERS.copy()
+    random.shuffle(letters)
+    for letter in letters:
+        rows = await asyncio.to_thread(_fetch_table_sync, letter, "", "all")
+        if rows:
+            return random.choice(rows)
+    return None

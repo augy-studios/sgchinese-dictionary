@@ -9,7 +9,7 @@ from telethon.errors import MessageNotModifiedError
 
 import config
 from database import init_db, get_session, save_session
-from search import do_search_query
+from search import do_search_query, get_random_entry
 
 logging.basicConfig(
     format="%(asctime)s  %(levelname)-8s  %(message)s",
@@ -143,6 +143,7 @@ async def cmd_start(event):
         "• Pinyin (tones optional): `chī fàn` or `chi fan`\n"
         "• English meaning: `eat rice`\n\n"
         "Use /help for full usage details.",
+        buttons=[[Button.inline("🎲 Random word", data="rand")]],
         parse_mode="md",
     )
 
@@ -160,9 +161,10 @@ async def cmd_help(event):
         "• ◀ / ▶ - previous / next page\n"
         "• ⇅ Sort - change sort order\n\n"
         "**Commands:**\n"
-        "/start - Welcome message\n"
-        "/sort  - Set default sort order\n"
-        "/about - About this dictionary",
+        "/start  - Welcome message\n"
+        "/random - Show a random word\n"
+        "/sort   - Set default sort order\n"
+        "/about  - About this dictionary",
         parse_mode="md",
     )
 
@@ -175,6 +177,42 @@ async def cmd_about(event):
         "and usage common in Singapore.",
         parse_mode="md",
     )
+
+
+async def _deliver_random(target, *, edit: bool) -> None:
+    entry = await get_random_entry()
+    if entry is None:
+        msg = "⚠️ Could not fetch a random word. Please try again."
+        await (target.edit(msg) if edit else target.respond(msg))
+        return
+    text = (
+        f"🎲 **Random word**\n\n"
+        f"**{entry['chinese']}** - {entry['hanyupinyin']}\n"
+        f"{entry['translation']}"
+    )
+    buttons = [[Button.inline("🎲 Another random word", data="rand")]]
+    if edit:
+        try:
+            await target.edit(text, buttons=buttons, parse_mode="md")
+        except MessageNotModifiedError:
+            await target.answer()
+    else:
+        await target.respond(text, buttons=buttons, parse_mode="md")
+
+
+@bot.on(events.NewMessage(pattern="/random$", func=lambda e: e.is_private))
+async def cmd_random(event):
+    async with bot.action(event.chat_id, "typing"):
+        await _deliver_random(event, edit=False)
+
+
+@bot.on(events.CallbackQuery(data=b"rand"))
+async def cb_random(event):
+    if not event.is_private:
+        await event.answer("This bot only works in DMs.", alert=True)
+        return
+    await event.answer()
+    await _deliver_random(event, edit=True)
 
 
 @bot.on(events.NewMessage(pattern="/sort$", func=lambda e: e.is_private))
