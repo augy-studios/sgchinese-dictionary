@@ -19,7 +19,7 @@ logger = logging.getLogger(__name__)
 
 bot = TelegramClient("sgchinese_bot", config.API_ID, config.API_HASH)
 
-# ── Constants ─────────────────────────────────────────────────────────────────
+# ── Constants
 
 SORT_OPTIONS: list[tuple[str, str]] = [
     ("hypy_asc",  "Pinyin A → Z"),
@@ -36,7 +36,7 @@ QUERY_TYPE_LABELS: dict[str, str] = {
     "all":       "all entries",
 }
 
-# ── Formatting ────────────────────────────────────────────────────────────────
+# ── Formatting
 
 def _format_results(
     results: list[dict],
@@ -87,7 +87,7 @@ def _build_nav_keyboard(page: int, total: int, sort: str) -> list[list] | None:
     return [nav, sort_row]
 
 
-# ── Core search helper ────────────────────────────────────────────────────────
+# ── Core search helper
 
 async def _deliver_results(
     target,
@@ -125,11 +125,10 @@ async def _deliver_results(
         await target.respond(text, buttons=buttons, parse_mode="md")
 
 
-# ── Message handlers ──────────────────────────────────────────────────────────
+# ── Message handlers
 
 @bot.on(events.NewMessage(func=lambda e: not e.is_private))
 async def _reject_non_dm(_event):
-    # Silently discard anything outside DMs
     pass
 
 
@@ -244,7 +243,7 @@ async def handle_search(event):
         await _deliver_results(event, user_id, query, session.get("sort", "hypy_asc"), 0, edit=False)
 
 
-# ── Callback query handlers ───────────────────────────────────────────────────
+# ── Callback query handlers
 
 @bot.on(events.CallbackQuery(data=b"noop"))
 async def cb_noop(event):
@@ -285,7 +284,6 @@ async def cb_sort_open(event):
 
 @bot.on(events.CallbackQuery(pattern=rb"^s:.+$"))
 async def cb_sort_select(event):
-    """Sort selected from the inline sort menu (within an active search)."""
     if not event.is_private:
         await event.answer("This bot only works in DMs.", alert=True)
         return
@@ -293,7 +291,7 @@ async def cb_sort_select(event):
     user_id = event.sender_id
     session = await get_session(user_id)
     if not session.get("query"):
-        # No active search - just persist preference and confirm
+        # no active search — save preference and confirm
         await save_session(user_id, sort=sort)
         label = SORT_LABELS.get(sort, sort)
         await event.answer(f"Sort set to: {label}")
@@ -308,7 +306,6 @@ async def cb_sort_select(event):
 
 @bot.on(events.CallbackQuery(data=b"sc"))
 async def cb_sort_cancel(event):
-    """Cancel sort menu - restore previous search results."""
     if not event.is_private:
         await event.answer()
         return
@@ -325,7 +322,6 @@ async def cb_sort_cancel(event):
 
 @bot.on(events.CallbackQuery(pattern=rb"^sp:.+$"))
 async def cb_sort_pref(event):
-    """Sort selected from the /sort command (may or may not have an active search)."""
     if not event.is_private:
         await event.answer("This bot only works in DMs.", alert=True)
         return
@@ -335,11 +331,9 @@ async def cb_sort_pref(event):
     label   = SORT_LABELS.get(sort, sort)
     await event.answer(f"Sort set to: {label}")
     if session.get("query"):
-        # Re-run active search with the new sort
         await _deliver_results(event, user_id, session["query"], sort, 0, edit=True)
     else:
         await save_session(user_id, sort=sort)
-        # Refresh the sort menu to reflect the new selection
         buttons = [
             [Button.inline(("✓  " if k == sort else "     ") + lbl, data=f"sp:{k}")]
             for k, lbl in SORT_OPTIONS
@@ -351,7 +345,7 @@ async def cb_sort_pref(event):
         )
 
 
-# ── Entry point ───────────────────────────────────────────────────────────────
+# ── Entry point
 
 async def main() -> None:
     await init_db()

@@ -40,7 +40,6 @@ self.addEventListener('fetch', event => {
     return;
   }
 
-  // Cache-first for static assets
   event.respondWith(
     caches.match(request).then(cached => {
       if (cached) return cached;

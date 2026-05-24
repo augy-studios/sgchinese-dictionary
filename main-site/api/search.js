@@ -1,18 +1,14 @@
-// api/search.js
-
 'use strict';
 
 const {
     createClient
 } = require('@supabase/supabase-js');
 
-// Available letter-suffixed tables
 const AVAILABLE_LETTERS = [
     'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'j', 'k',
     'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'w', 'x', 'y', 'z'
 ];
 
-// Pinyin tone → base letter map
 const TONE_MAP = {
     'ā': 'a',
     'á': 'a',
@@ -47,8 +43,7 @@ function normalisePinyin(str) {
     ).toLowerCase();
 }
 
-// Expands each bare vowel into a character class that matches all tonal variants.
-// e.g. "jie" → "ji[eēéěè]", "a jie" → "[aāáǎà] ji[eēéěè]"
+// maps each bare vowel to a char class matching all tonal variants
 const ACCENT_CLASS = {
     a: '[aāáǎà]',
     e: '[eēéěè]',
@@ -60,7 +55,6 @@ const ACCENT_CLASS = {
 
 function buildPinyinRegex(query) {
     const norm = normalisePinyin(query);
-    // Escape regex metacharacters (but NOT brackets — we're about to add them)
     const escaped = norm.replace(/[.+*?^${}()|[\]\\]/g, '\\$&');
     return escaped.replace(/[aeiouv]/g, ch => ACCENT_CLASS[ch] || ch);
 }
@@ -68,13 +62,10 @@ function buildPinyinRegex(query) {
 function detectQueryType(q) {
     if (/[\u4e00-\u9fff\u3400-\u4dbf]/.test(q)) return 'chinese';
     if (/[āáǎàēéěèīíǐìōóǒòūúǔùǖǘǚǜü]/i.test(q)) return 'pinyin';
-    // Pure alphabetic — could be pinyin syllable or english word
-    // We treat it as ambiguous and search both
     return 'ambiguous';
 }
 
 function getSortColumns(sort) {
-    // Returns [column, ascending]
     switch (sort) {
         case 'hypy_asc':
             return [{
@@ -104,16 +95,12 @@ function getSortColumns(sort) {
     }
 }
 
-// Determine which tables to query based on query type
 function getTablesToQuery(q, queryType) {
-    // All searches use ilike '%query%' (substring match), so a query like "jie"
-    // can match entries in any table (e.g. "ā jiě" is in sgchn_a, not sgchn_j).
-    // Always query all tables.
+    // substring match can span tables (e.g. "jie" matches "ā jiě" in sgchn_a)
     return AVAILABLE_LETTERS;
 }
 
 module.exports = async function handler(req, res) {
-    // CORS
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
     if (req.method === 'OPTIONS') {
@@ -151,9 +138,6 @@ module.exports = async function handler(req, res) {
     const sortCols = getSortColumns(sort);
 
     try {
-        // Collect all matching rows across relevant tables with COUNT
-        // We do this with parallel queries for speed
-
         const normQ = normalisePinyin(query);
 
         const tableResults = await Promise.all(
@@ -166,7 +150,7 @@ module.exports = async function handler(req, res) {
                 if (queryType === 'chinese') {
                     qb = qb.ilike('chinese', `%${query}%`);
                 } else if (queryType === 'pinyin') {
-                    // imatch = case-insensitive regex; expands e→[eēéěè] etc.
+                    // imatch: case-insensitive regex, expands e→[eēéěè] etc.
                     qb = qb.filter('hanyupinyin', 'imatch', buildPinyinRegex(query));
                 } else if (queryType === 'ambiguous') {
                     const pinyinPattern = buildPinyinRegex(query);
@@ -174,14 +158,11 @@ module.exports = async function handler(req, res) {
                         `hanyupinyin.imatch.${pinyinPattern},translation.ilike.%${query}%`
                     );
                 }
-                // queryType === 'all': no filter — fetch everything
-
-                // Apply sort (no limit/offset here — we aggregate first)
+                // 'all': no filter — fetch everything; no limit here, sort after aggregation
                 return qb;
             })
         );
 
-        // Merge and de-duplicate
         const allRows = [];
         const seen = new Set();
 
@@ -203,10 +184,8 @@ module.exports = async function handler(req, res) {
             }
         }
 
-        // Total before pagination
         const total = allRows.length;
 
-        // Sort merged results
         const {
             col,
             asc
@@ -214,7 +193,6 @@ module.exports = async function handler(req, res) {
         allRows.sort((a, b) => {
             const av = (a[col] || '').toLowerCase();
             const bv = (b[col] || '').toLowerCase();
-            // For pinyin sort, normalise
             const an = col === 'hanyupinyin' ? normalisePinyin(av) : av;
             const bn = col === 'hanyupinyin' ? normalisePinyin(bv) : bv;
             if (an < bn) return asc ? -1 : 1;
@@ -222,7 +200,6 @@ module.exports = async function handler(req, res) {
             return 0;
         });
 
-        // Paginate
         const pageRows = allRows.slice(pageOffset, pageOffset + pageLimit);
 
         return res.status(200).json({

@@ -1,16 +1,14 @@
 'use strict';
 
-// ── Constants ────────────────────────────────
+// ── Constants
 
 const PAGE_SIZE = 30;
 
-// Available table letter suffixes (from Supabase)
 const AVAILABLE_LETTERS = [
     'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'j', 'k',
     'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'w', 'x', 'y', 'z'
 ];
 
-// Pinyin tone-mark → base letter map for normalisation
 const TONE_MAP = {
     'ā': 'a', 'á': 'a', 'ǎ': 'a', 'à': 'a',
     'ē': 'e', 'é': 'e', 'ě': 'e', 'è': 'e',
@@ -39,7 +37,7 @@ function detectQueryType(q) {
     return looksLikePinyin ? 'ambiguous' : 'english';
 }
 
-// ── State ────────────────────────────────────
+// ── State
 
 const state = {
     query: '',
@@ -50,7 +48,7 @@ const state = {
     debounceTimer: null,
 };
 
-// ── DOM Refs ──────────────────────────────────
+// ── DOM Refs
 
 const searchInput    = document.getElementById('searchInput');
 const clearBtn       = document.getElementById('clearBtn');
@@ -69,7 +67,7 @@ const themeModalBackdrop = document.getElementById('themeModalBackdrop');
 const themeModalClose    = document.getElementById('themeModalClose');
 const themeChips         = document.querySelectorAll('.theme-chip');
 
-// ── Theme ─────────────────────────────────────
+// ── Theme
 
 function applyTheme(theme) {
     document.body.setAttribute('data-theme', theme);
@@ -112,7 +110,7 @@ themeChips.forEach(chip => {
     });
 });
 
-// ── Search ────────────────────────────────────
+// ── Search
 
 searchInput.addEventListener('input', () => {
     const q = searchInput.value.trim();
@@ -157,7 +155,6 @@ nextBtn.addEventListener('click', () => {
     }
 });
 
-// Copy handler (delegated)
 resultsGrid.addEventListener('click', e => {
     const btn = e.target.closest('.btn-copy');
     if (!btn) return;
@@ -178,7 +175,7 @@ resultsGrid.addEventListener('click', e => {
     });
 });
 
-// ── Fetch ─────────────────────────────────────
+// ── Fetch
 
 async function fetchResults() {
     if (state.loading) return;
@@ -217,7 +214,7 @@ async function fetchResults() {
     }
 }
 
-// ── Render ────────────────────────────────────
+// ── Render
 
 function renderResults(results, queryType) {
     if (results.length === 0) {
@@ -319,13 +316,13 @@ function updatePagination() {
     nextBtn.disabled = state.page >= totalPages;
 }
 
-// ── UI States ─────────────────────────────────
+// ── UI States
 
 function setLoading(on) {
     loaderWrap.hidden = !on;
 }
 
-// ── PWA Service Worker ────────────────────────
+// ── PWA Service Worker
 
 if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
@@ -335,7 +332,7 @@ if ('serviceWorker' in navigator) {
     });
 }
 
-// ── Init ──────────────────────────────────────
+// ── Init
 
 initTheme();
 fetchResults();

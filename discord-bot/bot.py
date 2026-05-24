@@ -18,7 +18,7 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-# ── Constants ─────────────────────────────────────────────────────────────────
+# ── Constants
 
 SORT_OPTIONS: list[tuple[str, str]] = [
     ("hypy_asc",  "Pinyin A → Z"),
@@ -39,7 +39,7 @@ ACCENT_COLOUR = discord.Colour(0xE84C30)
 
 ZENQUOTES_URL = "https://zenquotes.io/api/random"
 
-# ── Embed builders ────────────────────────────────────────────────────────────
+# ── Embed builders
 
 def build_results_embed(
     results: list[dict],
@@ -80,17 +80,10 @@ def build_results_embed(
     return embed
 
 
-# ── Views ─────────────────────────────────────────────────────────────────────
+# ── Views
 
 class SortView(discord.ui.View):
-    """
-    Sort-order picker.
-
-    When `query` is provided the selection immediately re-runs the search
-    and replaces this view with a fresh SearchView.  When omitted (i.e.
-    launched from /sort with no active search) it just persists the
-    preference and confirms.
-    """
+    """Sort-order picker; re-runs search immediately if query is set."""
 
     def __init__(
         self,
@@ -310,7 +303,7 @@ class SearchView(discord.ui.View):
         self.stop()
 
 
-# ── Bot setup ─────────────────────────────────────────────────────────────────
+# ── Bot setup
 
 intents = discord.Intents.default()
 client = discord.Client(intents=intents)
@@ -325,7 +318,7 @@ async def on_ready():
     logger.info("Slash commands synced globally.")
 
 
-# ── Commands ──────────────────────────────────────────────────────────────────
+# ── Commands
 
 @tree.command(name="help", description="Show usage guide and all available commands")
 async def cmd_help(interaction: discord.Interaction):
@@ -475,7 +468,7 @@ async def cmd_quote(interaction: discord.Interaction):
     await interaction.followup.send(embed=embed)
 
 
-# ── Entry point ───────────────────────────────────────────────────────────────
+# ── Entry point
 
 if __name__ == "__main__":
     client.run(config.DISCORD_TOKEN, log_handler=None)

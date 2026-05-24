@@ -92,14 +92,12 @@ async def do_search_query(
     }
     col, asc = sort_map.get(sort, ("hanyupinyin", True))
 
-    # Fan out to all 23 tables concurrently using a thread pool
     tasks = [
         asyncio.to_thread(_fetch_table_sync, letter, query, query_type)
         for letter in AVAILABLE_LETTERS
     ]
     per_table = await asyncio.gather(*tasks)
 
-    # Merge and deduplicate by (chinese, hanyupinyin)
     all_rows: list[dict] = []
     seen: set[str] = set()
     for rows in per_table:
