@@ -5,7 +5,7 @@ Search local Chinese terms by Hanyu Pinyin, Chinese characters, or English.
 ## Project Structure
 
 ```bash
-sg-chinese/
+sgchinese-dictionary/
 ├── index.html          - Main page
 ├── style.css
 ├── app.js              - Frontend JS (search, sort, theme, SW)
