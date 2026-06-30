@@ -1,10 +1,11 @@
-const CACHE = "sgchn-dict-offline-v4";
+const CACHE = "sgchn-dict-v1";
 
 const ASSETS = [
   "/",
   "/index.html",
   "/style.css",
   "/script.js",
+  "/lib/uwu-request-signing.js",
   "/SGCD-main.png",
   "/favicon.ico",
   "/manifest.json"

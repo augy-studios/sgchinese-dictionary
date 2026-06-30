@@ -3,6 +3,7 @@
 const {
     createClient
 } = require('@supabase/supabase-js');
+const { verifySignedRequest } = require('../lib/uwu-request-signing-server');
 
 const AVAILABLE_LETTERS = [
     'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'j', 'k',
@@ -133,6 +134,15 @@ module.exports = async function handler(req, res) {
     }
 
     const supabase = createClient(supabaseUrl, supabaseKey);
+
+    const verification = await verifySignedRequest(req, supabase);
+    if (!verification.valid) {
+        return res.status(403).json({
+            error: 'Invalid request signature',
+            reason: verification.reason
+        });
+    }
+
     const queryType = query ? detectQueryType(query) : 'all';
     const tables = query ? getTablesToQuery(query, queryType) : AVAILABLE_LETTERS;
     const sortCols = getSortColumns(sort);
