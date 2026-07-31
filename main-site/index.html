@@ -31,7 +31,25 @@
     <meta property="og:description"
         content="Singaporean Chinese Dictionary - search local Chinese terms by Hanyu Pinyin, characters, or English." />
 
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Jua&family=Inter:wght@400;500&display=swap">
+    <script>
+        (function () {
+            var k = "sgchn-dict";
+            var legacy = {
+                classic: "classic", notgreen1: "not-green-1", notgreen2: "not-green-2",
+                notgreen3: "not-green-3", notgreen4: "not-green-4", notgreen5: "not-green-5",
+                white: "really-light-green"
+            };
+            var m = localStorage.getItem(k + ".mode") || "light";
+            var c = localStorage.getItem(k + ".colorTheme")
+                || legacy[localStorage.getItem("sgchn_theme")]
+                || "classic";
+            document.documentElement.setAttribute("data-mode", m);
+            document.documentElement.setAttribute("data-color-theme", c);
+        })();
+    </script>
+
+    <link href="https://fonts.googleapis.com/css2?family=Jua&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="/css/theme.css">
     <link rel="stylesheet" href="/style.css">
     <meta name="theme-color" content="#ccffcc" />
 
@@ -42,12 +60,9 @@
     <meta name="twitter:card" content="summary">
     <meta name="twitter:image:src" content="/SGCD-main.png">
     <meta property="og:image" content="/SGCD-main.png" />
-
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
-    <script defer="" src="https://use.fontawesome.com/releases/v6.5.2/js/all.js"></script>
 </head>
 
-<body data-theme="classic">
+<body>
     <!-- ───── HEADER ───── -->
     <header class="glass-header">
         <div class="header-inner">
@@ -55,7 +70,7 @@
                 <svg class="brand-icon" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg"
                     aria-hidden="true">
                     <rect width="32" height="32" rx="8" fill="var(--brand)" />
-                    <text x="6" y="23" font-size="18" fill="white" font-family="serif" font-weight="bold">字</text>
+                    <text x="6" y="23" font-size="18" fill="var(--on-brand)" font-family="serif" font-weight="bold">字</text>
                 </svg>
                 <div class="brand-text">
                     <span class="brand-title">SG Chinese</span>
@@ -104,14 +119,9 @@
                 </a>
 
                 <!-- Theme picker -->
-                <button class="btn-icon" id="themeBtn" title="Change Theme" aria-label="Change Theme"
+                <button class="btn-icon" id="themeBtn" type="button" title="Theme" aria-label="Theme"
                     aria-haspopup="dialog">
-                    <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" width="22" height="22"
-                        aria-hidden="true">
-                        <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2" />
-                        <path d="M12 2a10 10 0 0 1 0 20" fill="currentColor" opacity="0.3" />
-                        <circle cx="12" cy="12" r="3" fill="currentColor" />
-                    </svg>
+                    <span data-icon="sun"></span>
                     <span class="btn-icon-label">Theme</span>
                 </button>
             </div>
@@ -126,7 +136,7 @@
 
     <!-- ───── SEARCH + SORT ───── -->
     <main class="main-container">
-        <div class="search-row glass-card">
+        <div class="search-row glass">
             <div class="search-wrap">
                 <span class="search-icon" aria-hidden="true">
                     <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" width="20" height="20">
@@ -217,7 +227,7 @@
 
     <!-- ───── FOOTER ───── -->
     <footer class="site-footer">
-        <p>Built with <svg viewBox="0 0 24 24" fill="#4caf50" xmlns="http://www.w3.org/2000/svg" width="16" height="16"
+        <p>Built with <svg viewBox="0 0 24 24" fill="#34c759" xmlns="http://www.w3.org/2000/svg" width="16" height="16"
                 aria-label="love" style="vertical-align:-3px;display:inline-block">
                 <path
                     d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
@@ -226,54 +236,27 @@
     </footer>
 
     <!-- ───── THEME MODAL ───── -->
-    <div class="modal-backdrop" id="themeModalBackdrop" hidden aria-modal="true" role="dialog"
-        aria-label="Choose Theme">
-        <div class="modal glass-card">
-            <div class="modal-header">
-                <h2 class="modal-title">Choose Theme</h2>
-                <button class="btn-icon modal-close" id="themeModalClose" aria-label="Close theme picker">
-                    <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" width="20" height="20">
-                        <line x1="18" y1="6" x2="6" y2="18" stroke="currentColor" stroke-width="2"
-                            stroke-linecap="round" />
-                        <line x1="6" y1="6" x2="18" y2="18" stroke="currentColor" stroke-width="2"
-                            stroke-linecap="round" />
-                    </svg>
+    <div class="modal-backdrop hidden" id="themeModal">
+        <div class="modal glass" role="dialog" aria-modal="true" aria-labelledby="themeModalTitle">
+            <div class="modal-head">
+                <h2 id="themeModalTitle">Theme</h2>
+                <button class="icon-btn small" type="button" data-close-modal="themeModal" aria-label="Close">
+                    <span data-icon="close"></span>
                 </button>
             </div>
-            <div class="theme-grid">
-                <button class="theme-chip active" data-theme="classic" aria-pressed="true">
-                    <span class="theme-swatch" style="background:#ccffcc;"></span>
-                    Classic
-                </button>
-                <button class="theme-chip" data-theme="notgreen1" aria-pressed="false">
-                    <span class="theme-swatch" style="background:#ffcccc;"></span>
-                    Not Green 1
-                </button>
-                <button class="theme-chip" data-theme="notgreen2" aria-pressed="false">
-                    <span class="theme-swatch" style="background:#ccccff;"></span>
-                    Not Green 2
-                </button>
-                <button class="theme-chip" data-theme="notgreen3" aria-pressed="false">
-                    <span class="theme-swatch" style="background:#ffffcc;"></span>
-                    Not Green 3
-                </button>
-                <button class="theme-chip" data-theme="notgreen4" aria-pressed="false">
-                    <span class="theme-swatch" style="background:#ffccff;"></span>
-                    Not Green 4
-                </button>
-                <button class="theme-chip" data-theme="notgreen5" aria-pressed="false">
-                    <span class="theme-swatch" style="background:#ccffff;"></span>
-                    Not Green 5
-                </button>
-                <button class="theme-chip" data-theme="white" aria-pressed="false">
-                    <span class="theme-swatch" style="background:#ffffff; border: 1px solid #ddd;"></span>
-                    Really Really Light Green
-                </button>
+            <p class="modal-section-label">Mode</p>
+            <div class="mode-toggle" id="modeToggle">
+                <button class="mode-btn" type="button" data-mode="light" aria-pressed="false"><span data-icon="sun"></span>Light</button>
+                <button class="mode-btn" type="button" data-mode="dark" aria-pressed="false"><span data-icon="moon"></span>Dark</button>
             </div>
+            <p class="modal-section-label">Brand colour</p>
+            <div class="swatch-grid" id="swatchGrid"></div>
         </div>
     </div>
 
-
+    <script src="/js/icons.js"></script>
+    <script src="/js/ui.js"></script>
+    <script src="/js/theme.js"></script>
     <script src="/lib/uwu-request-signing.js"></script>
     <script src="/script.js"></script>
 

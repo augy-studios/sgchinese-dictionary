@@ -6,7 +6,7 @@ const { createClient } = require('@supabase/supabase-js');
 const GUEST_TTL_MS = 10 * 60 * 1000;
 
 function isAllowedOrigin(origin) {
-    if (!origin) return true; // same-origin requests often arrive with no Origin header — allow
+    if (!origin) return true; // same-origin requests often arrive with no Origin header, so allow
     const allowed = (process.env.ALLOWED_ORIGINS || '').split(',').map(o => o.trim()).filter(Boolean);
     return allowed.includes(origin);
 }

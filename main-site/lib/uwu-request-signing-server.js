@@ -102,7 +102,7 @@ async function verifySignedRequest(req, supabase) {
         .from('uwu_used_request_tokens')
         .insert({ token, session_token: sessionToken, used_at: new Date().toISOString() });
     if (insertErr) {
-        // unique violation on token means a concurrent request already claimed it — treat as replay
+        // unique violation on token means a concurrent request already claimed it, so treat as replay
         return { valid: false, reason: 'replayed' };
     }
 

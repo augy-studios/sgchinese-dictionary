@@ -1,9 +1,13 @@
-const CACHE = "sgchn-dict-v1";
+const CACHE = "sgchn-dict-v2";
 
 const ASSETS = [
   "/",
   "/index.html",
+  "/css/theme.css",
   "/style.css",
+  "/js/icons.js",
+  "/js/ui.js",
+  "/js/theme.js",
   "/script.js",
   "/lib/uwu-request-signing.js",
   "/SGCD-main.png",

@@ -40,7 +40,14 @@
             }]
         },
         {
-            "source": "/(style\\.css|app\\.js)",
+            "source": "/(.*\\.(css|js))",
+            "headers": [{
+                "key": "Cache-Control",
+                "value": "public, max-age=0, must-revalidate"
+            }]
+        },
+        {
+            "source": "/(.*\\.(png|ico|svg))",
             "headers": [{
                 "key": "Cache-Control",
                 "value": "public, max-age=31536000, immutable"

@@ -62,53 +62,8 @@ const pageIndicator  = document.getElementById('pageIndicator');
 const emptyState     = document.getElementById('emptyState');
 const emptySubText   = document.getElementById('emptySubText');
 const loaderWrap     = document.getElementById('loaderWrap');
-const themeBtn       = document.getElementById('themeBtn');
-const themeModalBackdrop = document.getElementById('themeModalBackdrop');
-const themeModalClose    = document.getElementById('themeModalClose');
-const themeChips         = document.querySelectorAll('.theme-chip');
 
-// ── Theme
-
-function applyTheme(theme) {
-    document.body.setAttribute('data-theme', theme);
-    localStorage.setItem('sgchn_theme', theme);
-    themeChips.forEach(chip => {
-        const active = chip.dataset.theme === theme;
-        chip.classList.toggle('active', active);
-        chip.setAttribute('aria-pressed', String(active));
-    });
-}
-
-function initTheme() {
-    const saved = localStorage.getItem('sgchn_theme') || 'classic';
-    applyTheme(saved);
-}
-
-themeBtn.addEventListener('click', () => {
-    themeModalBackdrop.hidden = false;
-    themeModalClose.focus();
-});
-
-themeModalClose.addEventListener('click', closeThemeModal);
-themeModalBackdrop.addEventListener('click', e => {
-    if (e.target === themeModalBackdrop) closeThemeModal();
-});
-
-document.addEventListener('keydown', e => {
-    if (e.key === 'Escape' && !themeModalBackdrop.hidden) closeThemeModal();
-});
-
-function closeThemeModal() {
-    themeModalBackdrop.hidden = true;
-    themeBtn.focus();
-}
-
-themeChips.forEach(chip => {
-    chip.addEventListener('click', () => {
-        applyTheme(chip.dataset.theme);
-        closeThemeModal();
-    });
-});
+// Theme lives in js/theme.js and boots itself.
 
 // ── Search
 
@@ -239,7 +194,7 @@ function renderResults(results, queryType) {
 
     results.forEach((entry, i) => {
         const card = document.createElement('div');
-        card.className = 'entry-card';
+        card.className = 'entry-card glass';
         card.setAttribute('role', 'listitem');
         card.style.animationDelay = `${i * 25}ms`;
 
@@ -464,10 +419,9 @@ window.addEventListener('online', () => {
 
 // ── Init
 
-// No login on this site — every visitor is anonymous, so a guest signing key
+// No login on this site, every visitor is anonymous, so a guest signing key
 // is required before any signedFetch() call can succeed.
 const guestKeyReady = UwuRequestSigning.initGuestKey('sg-chinese-dictionary')
     .catch(err => console.warn('Guest key init failed:', err));
 
-initTheme();
 guestKeyReady.then(fetchResults);

@@ -75,7 +75,7 @@
     async function signedFetch(url, options = {}) {
         const stored = getSigningKey();
         if (!stored) {
-            throw new Error('signedFetch: no signing key available — call initGuestKey() or log in first');
+            throw new Error('signedFetch: no signing key available; call initGuestKey() or log in first');
         }
         const { signingKey, keyId } = stored;
 

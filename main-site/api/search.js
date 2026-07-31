@@ -168,7 +168,7 @@ module.exports = async function handler(req, res) {
                         `hanyupinyin.imatch.${pinyinPattern},translation.ilike.%${query}%`
                     );
                 }
-                // 'all': no filter — fetch everything; no limit here, sort after aggregation
+                // 'all': no filter, fetch everything; no limit here, sort after aggregation
                 return qb;
             })
         );
