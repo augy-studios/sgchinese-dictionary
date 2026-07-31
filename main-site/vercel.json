@@ -1,21 +1,7 @@
 {
     "$schema": "https://openapi.vercel.sh/vercel.json",
-    "version": 2,
     "cleanUrls": true,
     "regions": ["sin1"],
-    "routes": [{
-            "src": "/api/(.*)",
-            "dest": "/api/$1"
-        },
-        {
-            "src": "/(.*\\.(css|js|json|png|svg|ico|webmanifest))",
-            "dest": "/$1"
-        },
-        {
-            "src": "/(.*)",
-            "dest": "/"
-        }
-    ],
     "headers": [{
             "source": "/(.*)",
             "headers": [{
@@ -40,19 +26,18 @@
             }]
         },
         {
-            "source": "/(.*\\.(css|js))",
+            "source": "/(.*)\\.(css|js)",
             "headers": [{
                 "key": "Cache-Control",
                 "value": "public, max-age=0, must-revalidate"
             }]
         },
         {
-            "source": "/(.*\\.(png|ico|svg))",
+            "source": "/(.*)\\.(png|ico|svg)",
             "headers": [{
                 "key": "Cache-Control",
                 "value": "public, max-age=31536000, immutable"
             }]
         }
     ]
-
 }

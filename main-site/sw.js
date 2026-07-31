@@ -1,4 +1,4 @@
-const CACHE = "sgchn-dict-v3";
+const CACHE = "sgchn-dict-v4";
 
 const ASSETS = [
   "/",
@@ -9,7 +9,6 @@ const ASSETS = [
   "/js/ui.js",
   "/js/theme.js",
   "/script.js",
-  "/lib/uwu-request-signing.js",
   "/SGCD-main.png",
   "/favicon.ico",
   "/manifest.json"

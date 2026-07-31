@@ -151,7 +151,7 @@ async function fetchResults() {
     });
 
     try {
-        const res = await UwuRequestSigning.signedFetch(`/api/search?${params}`);
+        const res = await fetch(`/api/search?${params}`);
         if (!res.ok) throw new Error(`Server error: ${res.status}`);
         const { results, total, queryType } = await res.json();
 
@@ -351,7 +351,7 @@ async function prefetchAllEntries() {
         // Skip if recently prefetched and data exists; always run on online event (caller clears ts)
         if (cached > 0 && Date.now() - lastTs < PREFETCH_TTL_MS) return;
 
-        const res = await UwuRequestSigning.signedFetch('/api/all');
+        const res = await fetch('/api/all');
         if (!res.ok) return;
         const { entries } = await res.json();
         if (!entries || !entries.length) return;
@@ -407,21 +407,16 @@ if ('serviceWorker' in navigator) {
         navigator.serviceWorker.register('/sw.js').catch(err => {
             console.warn('SW registration failed:', err);
         });
-        if (navigator.onLine) guestKeyReady.then(prefetchAllEntries);
+        if (navigator.onLine) prefetchAllEntries();
     });
 }
 
 window.addEventListener('online', () => {
     // Clear the TTL so prefetch always runs when coming back online
     localStorage.removeItem('sgchn_prefetch_ts');
-    guestKeyReady.then(prefetchAllEntries);
+    prefetchAllEntries();
 });
 
 // ── Init
 
-// No login on this site, every visitor is anonymous, so a guest signing key
-// is required before any signedFetch() call can succeed.
-const guestKeyReady = UwuRequestSigning.initGuestKey('sg-chinese-dictionary')
-    .catch(err => console.warn('Guest key init failed:', err));
-
-guestKeyReady.then(fetchResults);
+fetchResults();
