@@ -1,4 +1,4 @@
-const CACHE = "sgchn-dict-v4";
+const CACHE = "sgchn-dict-v5";
 
 const ASSETS = [
   "/",
