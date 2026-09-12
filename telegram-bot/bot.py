@@ -3,12 +3,13 @@
 
 import asyncio
 import logging
+import re
 
 from telethon import TelegramClient, events, Button
-from telethon.errors import MessageNotModifiedError
 
 import config
 from database import init_db, get_session, save_session
+from reply import send_rich_message, edit_rich_message, edit_rich_message_at
 from search import do_search_query, get_random_entry
 
 logging.basicConfig(
@@ -36,44 +37,87 @@ QUERY_TYPE_LABELS: dict[str, str] = {
     "all":       "all entries",
 }
 
-# ── Formatting
+# ── Rich Markdown escaping
 
-def _format_results(
+_MD_SPECIAL = re.compile(r"([\\*_~`|\[\]#>=])")
+
+
+def escape_md(text) -> str:
+    """Escape user/data text for Telegram's Rich Markdown dialect."""
+    return _MD_SPECIAL.sub(r"\\\1", str(text))
+
+
+def escape_cell(text) -> str:
+    """Escape for a GFM table cell; also flattens newlines so the row stays intact."""
+    return escape_md(str(text).replace("\n", " "))
+
+
+def md_table(headers: list[str], rows: list[list]) -> str:
+    """Render a GFM pipe table. Headers are literal; cell values are escaped."""
+    lines = ["| " + " | ".join(headers) + " |",
+             "| " + " | ".join(["---"] * len(headers)) + " |"]
+    for row in rows:
+        lines.append("| " + " | ".join(escape_cell(v) for v in row) + " |")
+    return "\n".join(lines)
+
+
+def _plain_cell(text) -> str:
+    return str(text).replace("\n", " ")
+
+
+# ── View builders  (each returns (rich, buttons))
+
+def _sort_keyboard(current: str, prefix: str) -> list[list]:
+    return [
+        [Button.inline(("✓  " if k == current else "     ") + label, data=f"{prefix}:{k}")]
+        for k, label in SORT_OPTIONS
+    ]
+
+
+def build_results(
     results: list[dict],
     total: int,
     query: str,
     sort: str,
     page: int,
     query_type: str,
-) -> str:
+) -> tuple[dict, list[list] | None]:
     per_page = config.RESULTS_PER_PAGE
     total_pages = max(1, (total + per_page - 1) // per_page)
     sort_label = SORT_LABELS.get(sort, "Pinyin A → Z")
     type_label = QUERY_TYPE_LABELS.get(query_type, "")
 
-    if not results:
-        return f"❌ No results found for **{query}**"
-
-    header = f"🔍 **{total}** result{'s' if total != 1 else ''}"
+    title = f"🔍 {total} result{'s' if total != 1 else ''}"
     if query:
-        header += f" for **{query}**"
+        title += f" for {query}"
         if type_label:
-            header += f" ({type_label})"
-    header += f"\nPage {page + 1} / {total_pages}  ·  {sort_label}"
+            title += f" ({type_label})"
+    meta = f"Page {page + 1} / {total_pages}  ·  {sort_label}"
 
-    lines = [header]
+    md_title = f"🔍 {total} result{'s' if total != 1 else ''}"
+    if query:
+        md_title += f" for **{escape_md(query)}**"
+        if type_label:
+            md_title += f" ({type_label})"
+
+    markdown = "\n".join([
+        f"# {md_title}",
+        meta,
+        "",
+        md_table(
+            ["Chinese", "Pinyin", "Translation"],
+            [[row["chinese"], row["hanyupinyin"], row["translation"]] for row in results],
+        ),
+    ])
+
+    fallback_lines = [title, meta]
     for row in results:
-        lines.append(f"\n**{row['chinese']}** - {row['hanyupinyin']}")
-        lines.append(row["translation"])
+        fallback_lines.append(
+            f"\n{_plain_cell(row['chinese'])} - {_plain_cell(row['hanyupinyin'])}"
+        )
+        fallback_lines.append(_plain_cell(row["translation"]))
 
-    return "\n".join(lines)
-
-
-def _build_nav_keyboard(page: int, total: int, sort: str) -> list[list] | None:
-    if total == 0:
-        return None
-    per_page = config.RESULTS_PER_PAGE
-    total_pages = max(1, (total + per_page - 1) // per_page)
+    rich = {"markdown": markdown, "fallback": "\n".join(fallback_lines)}
 
     nav: list = []
     if page > 0:
@@ -81,16 +125,142 @@ def _build_nav_keyboard(page: int, total: int, sort: str) -> list[list] | None:
     nav.append(Button.inline(f"{page + 1} / {total_pages}", data="noop"))
     if page < total_pages - 1:
         nav.append(Button.inline("Next ▶", data=f"p:{page + 1}"))
+    sort_row = [Button.inline(f"⇅  {sort_label}", data="so")]
 
-    sort_row = [Button.inline(f"⇅  {SORT_LABELS.get(sort, 'Sort')}", data="so")]
+    return rich, [nav, sort_row]
 
-    return [nav, sort_row]
+
+def build_random(entry: dict) -> tuple[dict, list[list]]:
+    chinese = entry["chinese"]
+    pinyin = entry["hanyupinyin"]
+    translation = entry["translation"]
+    rich = {
+        "markdown": "\n".join([
+            "# 🎲 Random word",
+            "",
+            md_table(["Chinese", "Pinyin", "Translation"], [[chinese, pinyin, translation]]),
+        ]),
+        "fallback": (
+            f"🎲 Random word\n\n"
+            f"{_plain_cell(chinese)} - {_plain_cell(pinyin)}\n"
+            f"{_plain_cell(translation)}"
+        ),
+    }
+    return rich, [[Button.inline("🎲 Another random word", data="rand")]]
+
+
+def build_start() -> tuple[dict, list[list]]:
+    rich = {
+        "markdown": (
+            "# 👋 Welcome to SG Chinese Dictionary!\n\n"
+            "Just type any word to search - no command needed.\n\n"
+            "## Search by\n"
+            "- Chinese characters: `吃饭`\n"
+            "- Pinyin (tones optional): `chī fàn` or `chi fan`\n"
+            "- English meaning: `eat rice`\n\n"
+            "Use /help for full usage details."
+        ),
+        "fallback": (
+            "👋 Welcome to SG Chinese Dictionary!\n\n"
+            "Just type any word to search - no command needed.\n\n"
+            "Search by:\n"
+            "• Chinese characters: 吃饭\n"
+            "• Pinyin (tones optional): chī fàn or chi fan\n"
+            "• English meaning: eat rice\n\n"
+            "Use /help for full usage details."
+        ),
+    }
+    return rich, [[Button.inline("🎲 Random word", data="rand")]]
+
+
+def build_help() -> tuple[dict, None]:
+    commands = [
+        ("/start",  "Welcome message"),
+        ("/random", "Show a random word"),
+        ("/sort",   "Set default sort order"),
+        ("/about",  "About this dictionary"),
+    ]
+    rich = {
+        "markdown": "\n".join([
+            "# SG Chinese Dictionary - Help",
+            "",
+            "## Searching",
+            "Type anything to search. The bot auto-detects your input type:",
+            "- **Chinese** - type Chinese characters (e.g. `好`)",
+            "- **Pinyin** - with or without tone marks (`hǎo` or `hao`)",
+            "- **English** - type an English word (`good`)",
+            "",
+            "## Browsing results",
+            "- ◀ / ▶ - previous / next page",
+            "- ⇅ Sort - change sort order",
+            "",
+            "## Commands",
+            md_table(["Command", "Description"], [list(c) for c in commands]),
+        ]),
+        "fallback": "\n".join([
+            "SG Chinese Dictionary - Help",
+            "",
+            "Searching:",
+            "Type anything to search. The bot auto-detects your input type:",
+            "• Chinese - type Chinese characters (e.g. 好)",
+            "• Pinyin - with or without tone marks (hǎo or hao)",
+            "• English - type an English word (good)",
+            "",
+            "Browsing results:",
+            "• ◀ / ▶ - previous / next page",
+            "• ⇅ Sort - change sort order",
+            "",
+            "Commands:",
+            *[f"{cmd}  - {desc}" for cmd, desc in commands],
+        ]),
+    }
+    return rich, None
+
+
+def build_about() -> tuple[dict, None]:
+    body = (
+        "A dictionary of Chinese words and phrases, including Mandarin "
+        "and usage common in Singapore."
+    )
+    rich = {
+        "markdown": f"# SG Chinese Dictionary\n\n{body}",
+        "fallback": f"SG Chinese Dictionary\n\n{body}",
+    }
+    return rich, None
+
+
+def build_sort_prompt(current: str, *, prefix: str, cancel: bool) -> tuple[dict, list[list]]:
+    """Sort picker. `sp:` sets the default; `s:` re-sorts the active search."""
+    note = "Applies to your next search." if prefix == "sp" else ""
+    rich = {
+        "markdown": "# Choose sort order" + (f"\n{note}" if note else ""),
+        "fallback": "Choose sort order" + (f"\n{note}" if note else ""),
+    }
+    buttons = _sort_keyboard(current, prefix)
+    if cancel:
+        buttons.append([Button.inline("✕  Cancel", data="sc")])
+    return rich, buttons
+
+
+def build_sort_confirm(sort: str, *, is_default: bool) -> tuple[dict, list[list] | None]:
+    label = SORT_LABELS.get(sort, sort)
+    if is_default:
+        rich = {
+            "markdown": f"# ✓ Default sort set to {escape_md(label)}\n\nApplies to your next search.",
+            "fallback": f"✓ Default sort set to {label}.\n\nApplies to your next search.",
+        }
+        return rich, _sort_keyboard(sort, "sp")
+    rich = {
+        "markdown": f"# ✓ Sort order set to {escape_md(label)}\n\nSearch for a word to see results.",
+        "fallback": f"✓ Sort order set to {label}.\n\nSearch for a word to see results.",
+    }
+    return rich, None
 
 
 # ── Core search helper
 
 async def _deliver_results(
-    target,
+    event,
     user_id: int,
     query: str,
     sort: str,
@@ -104,7 +274,7 @@ async def _deliver_results(
     except Exception as exc:
         logger.error("Search error for user %s: %s", user_id, exc)
         msg = "⚠️ Search failed. Please try again later."
-        await (target.edit(msg) if edit else target.respond(msg))
+        await (event.edit(msg) if edit else event.respond(msg))
         return
 
     results   = data["results"]
@@ -113,16 +283,17 @@ async def _deliver_results(
 
     await save_session(user_id, query=query, sort=sort, page=page, total=total)
 
-    text    = _format_results(results, total, query, sort, page, query_type)
-    buttons = _build_nav_keyboard(page, total, sort)
+    if not results:
+        msg = f"❌ No results found for {query}"
+        await (event.edit(msg) if edit else event.respond(msg))
+        return
+
+    rich, buttons = build_results(results, total, query, sort, page, query_type)
 
     if edit:
-        try:
-            await target.edit(text, buttons=buttons, parse_mode="md")
-        except MessageNotModifiedError:
-            await target.answer()
+        await edit_rich_message(bot, event, rich, buttons)
     else:
-        await target.respond(text, buttons=buttons, parse_mode="md")
+        await send_rich_message(bot, event.chat_id, rich, buttons)
 
 
 # ── Message handlers
@@ -134,69 +305,33 @@ async def _reject_non_dm(_event):
 
 @bot.on(events.NewMessage(pattern="/start$", func=lambda e: e.is_private))
 async def cmd_start(event):
-    await event.respond(
-        "👋 **Welcome to SG Chinese Dictionary!**\n\n"
-        "Just type any word to search - no command needed.\n\n"
-        "**Search by:**\n"
-        "• Chinese characters: `吃饭`\n"
-        "• Pinyin (tones optional): `chī fàn` or `chi fan`\n"
-        "• English meaning: `eat rice`\n\n"
-        "Use /help for full usage details.",
-        buttons=[[Button.inline("🎲 Random word", data="rand")]],
-        parse_mode="md",
-    )
+    rich, buttons = build_start()
+    await send_rich_message(bot, event.chat_id, rich, buttons)
 
 
 @bot.on(events.NewMessage(pattern="/help$", func=lambda e: e.is_private))
 async def cmd_help(event):
-    await event.respond(
-        "**SG Chinese Dictionary - Help**\n\n"
-        "**Searching:**\n"
-        "Type anything to search. The bot auto-detects your input type:\n"
-        "• **Chinese** - type Chinese characters (e.g. `好`)\n"
-        "• **Pinyin** - with or without tone marks (`hǎo` or `hao`)\n"
-        "• **English** - type an English word (`good`)\n\n"
-        "**Browsing results:**\n"
-        "• ◀ / ▶ - previous / next page\n"
-        "• ⇅ Sort - change sort order\n\n"
-        "**Commands:**\n"
-        "/start  - Welcome message\n"
-        "/random - Show a random word\n"
-        "/sort   - Set default sort order\n"
-        "/about  - About this dictionary",
-        parse_mode="md",
-    )
+    rich, buttons = build_help()
+    await send_rich_message(bot, event.chat_id, rich, buttons)
 
 
 @bot.on(events.NewMessage(pattern="/about$", func=lambda e: e.is_private))
 async def cmd_about(event):
-    await event.respond(
-        "**SG Chinese Dictionary**\n\n"
-        "A dictionary of Chinese words and phrases, including Mandarin "
-        "and usage common in Singapore.",
-        parse_mode="md",
-    )
+    rich, buttons = build_about()
+    await send_rich_message(bot, event.chat_id, rich, buttons)
 
 
-async def _deliver_random(target, *, edit: bool) -> None:
+async def _deliver_random(event, *, edit: bool) -> None:
     entry = await get_random_entry()
     if entry is None:
         msg = "⚠️ Could not fetch a random word. Please try again."
-        await (target.edit(msg) if edit else target.respond(msg))
+        await (event.edit(msg) if edit else event.respond(msg))
         return
-    text = (
-        f"🎲 **Random word**\n\n"
-        f"**{entry['chinese']}** - {entry['hanyupinyin']}\n"
-        f"{entry['translation']}"
-    )
-    buttons = [[Button.inline("🎲 Another random word", data="rand")]]
+    rich, buttons = build_random(entry)
     if edit:
-        try:
-            await target.edit(text, buttons=buttons, parse_mode="md")
-        except MessageNotModifiedError:
-            await target.answer()
+        await edit_rich_message(bot, event, rich, buttons)
     else:
-        await target.respond(text, buttons=buttons, parse_mode="md")
+        await send_rich_message(bot, event.chat_id, rich, buttons)
 
 
 @bot.on(events.NewMessage(pattern="/random$", func=lambda e: e.is_private))
@@ -219,15 +354,8 @@ async def cmd_sort(event):
     user_id = event.sender_id
     session = await get_session(user_id)
     current = session.get("sort", "hypy_asc")
-    buttons = [
-        [Button.inline(("✓  " if k == current else "     ") + label, data=f"sp:{k}")]
-        for k, label in SORT_OPTIONS
-    ]
-    await event.respond(
-        "**Choose sort order:**\nApplies to your next search.",
-        buttons=buttons,
-        parse_mode="md",
-    )
+    rich, buttons = build_sort_prompt(current, prefix="sp", cancel=False)
+    await send_rich_message(bot, event.chat_id, rich, buttons)
 
 
 @bot.on(events.NewMessage(
@@ -273,13 +401,9 @@ async def cb_sort_open(event):
     user_id = event.sender_id
     session = await get_session(user_id)
     current = session.get("sort", "hypy_asc")
-    buttons = [
-        [Button.inline(("✓  " if k == current else "     ") + label, data=f"s:{k}")]
-        for k, label in SORT_OPTIONS
-    ]
-    buttons.append([Button.inline("✕  Cancel", data="sc")])
+    rich, buttons = build_sort_prompt(current, prefix="s", cancel=True)
     await event.answer()
-    await event.edit("**Choose sort order:**", buttons=buttons, parse_mode="md")
+    await edit_rich_message(bot, event, rich, buttons)
 
 
 @bot.on(events.CallbackQuery(pattern=rb"^s:.+$"))
@@ -291,14 +415,11 @@ async def cb_sort_select(event):
     user_id = event.sender_id
     session = await get_session(user_id)
     if not session.get("query"):
-        # no active search — save preference and confirm
+        # no active search - save preference, confirm, and drop the picker keyboard
         await save_session(user_id, sort=sort)
-        label = SORT_LABELS.get(sort, sort)
-        await event.answer(f"Sort set to: {label}")
-        await event.edit(
-            f"✓ Sort order set to **{label}**.\n\nSearch for a word to see results.",
-            parse_mode="md",
-        )
+        await event.answer(f"Sort set to: {SORT_LABELS.get(sort, sort)}")
+        rich, _ = build_sort_confirm(sort, is_default=False)
+        await edit_rich_message_at(bot, event.chat_id, event.query.msg_id, rich)
         return
     await event.answer(f"Sort: {SORT_LABELS.get(sort, sort)}")
     await _deliver_results(event, user_id, session["query"], sort, 0, edit=True)
@@ -328,21 +449,13 @@ async def cb_sort_pref(event):
     sort    = event.data.decode().split(":", 1)[1]
     user_id = event.sender_id
     session = await get_session(user_id)
-    label   = SORT_LABELS.get(sort, sort)
-    await event.answer(f"Sort set to: {label}")
+    await event.answer(f"Sort set to: {SORT_LABELS.get(sort, sort)}")
     if session.get("query"):
         await _deliver_results(event, user_id, session["query"], sort, 0, edit=True)
     else:
         await save_session(user_id, sort=sort)
-        buttons = [
-            [Button.inline(("✓  " if k == sort else "     ") + lbl, data=f"sp:{k}")]
-            for k, lbl in SORT_OPTIONS
-        ]
-        await event.edit(
-            f"✓ Default sort set to **{label}**.\n\nApplies to your next search.",
-            buttons=buttons,
-            parse_mode="md",
-        )
+        rich, buttons = build_sort_confirm(sort, is_default=True)
+        await edit_rich_message(bot, event, rich, buttons)
 
 
 # ── Entry point

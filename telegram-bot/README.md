@@ -22,6 +22,7 @@ A DM-only Telegram bot built with [Telethon](https://docs.telethon.dev/) that le
 ```bash
 telegram-bot/
 ├── bot.py           # Main bot - event handlers and message formatting
+├── reply.py         # Rich Message send/edit helpers (raw TL requests)
 ├── search.py        # Supabase search logic (ported from the website API)
 ├── database.py      # SQLite session storage (sort preference, active query, page)
 ├── config.py        # Loads settings from .env
