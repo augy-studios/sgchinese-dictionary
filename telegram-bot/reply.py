@@ -18,6 +18,13 @@ from telethon.tl import functions
 
 logger = logging.getLogger(__name__)
 
+if not hasattr(types, "InputRichMessageMarkdown"):
+    import telethon
+    raise ImportError(
+        f"Telegram Rich Messages need telethon>=1.44.0, but {telethon.__version__} is "
+        f"installed. Run: pip install -U 'telethon>=1.44.0'"
+    )
+
 
 def _rich_markdown(rich: dict) -> types.InputRichMessageMarkdown:
     return types.InputRichMessageMarkdown(markdown=rich["markdown"])
