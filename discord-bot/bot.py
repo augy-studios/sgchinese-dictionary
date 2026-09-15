@@ -404,7 +404,9 @@ class StandaloneSortView(discord.ui.View):
 async def _update_presence():
     guild_count = len(client.guilds)
     await client.change_presence(
-        activity=discord.Game(name=f"SG Chinese words with {guild_count} guild{'s' if guild_count != 1 else ''}")
+        activity=discord.CustomActivity(
+            name=f"Learning Singaporean Chinese with {guild_count} guild{'s' if guild_count != 1 else ''}"
+        )
     )
 
 
